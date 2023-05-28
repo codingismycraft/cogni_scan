@@ -1,7 +1,7 @@
 
 import nibabel as nib
 
-import cogni_scan.src.imp
+import cogni_scan.src.nifti_mri as nm
 
 AXES = [
     (0, 1, 2),
@@ -25,7 +25,8 @@ ROTATIONS = [
 
 
 def loadMRI(filepath):
-    return nib.load(filepath).get_fdata()
+    return nm.NiftiMri(filepath)
+
 
 
 def saveMri(path, axes=None, rotation=None):

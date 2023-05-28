@@ -2,10 +2,9 @@ import cv2
 
 import nibabel as nib
 
-import cogni_scan.src.interfaces as cs
 
 
-class NiftiMri(cs.IMri):
+class NiftiMri:
 
     def __init__(self):
         initialize()

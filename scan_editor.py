@@ -151,38 +151,10 @@ class RightPaneView:
         self.remove_images()
         fig, axs = plt.subplots(3, 5, figsize=(85, 85))
         dfc1 = 0.5
-        dfc2 = 0.25
         for index, axis in enumerate([0, 1, 2]):
-            img = self.__scan_data.get_slice(axis=axis, size=image_size,
-                                             distance_from_center=-1 * dfc1)
+            img = self.__scan_data.get_slice(axis=axis)
             axs[index, 0].imshow(img)
             axs[index, 0].set_title(f"slice: {-1 * dfc1} ")
-
-            img = self.__scan_data.get_slice(axis=axis, size=image_size,
-                                             distance_from_center=-1 * dfc2)
-            axs[index, 1].imshow(img)
-            axs[index, 1].set_title(f"slice: {-1 * dfc2} ")
-
-            img = self.__scan_data.get_slice(axis=axis, size=image_size)
-            axs[index, 2].imshow(img)
-
-            axs[index, 2].imshow(img)
-            axs[index, 2].set_title(f"center slice ")
-
-            img = self.__scan_data.get_slice(axis=axis, size=image_size,
-                                             distance_from_center=1 * dfc2)
-            axs[index, 3].imshow(img)
-
-            axs[index, 3].imshow(img)
-            axs[index, 3].set_title(f"slice: {1 * dfc2} ")
-
-            img = self.__scan_data.get_slice(axis=axis, size=image_size,
-                                             distance_from_center=1 * dfc1)
-            axs[index, 4].imshow(img)
-
-            axs[index, 4].imshow(img)
-            axs[index, 4].set_title(f"slice: {1 * dfc1} ")
-
         fig.subplots_adjust(hspace=1.2)
         canvas = FigureCanvasTkAgg(fig, master=self.__parent_frame)
         canvas.draw()
