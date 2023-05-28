@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Ignore test runner
+pt.sh
+
+# Ignore todo
+todo.md
+
 # Distribution / packaging
 .Python
 build/
