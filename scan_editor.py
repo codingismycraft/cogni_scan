@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-import cogni_scan.src.cogni_scan as cs
+import cogni_scan.src.utils as cs
 
 HOME_DIR = pathlib.Path.home()
 OASIS3_ROOT = os.path.join(HOME_DIR, "oasis3-scans")
