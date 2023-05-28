@@ -6,16 +6,17 @@ import nibabel as nib
 
 class NiftiMri:
 
-    def __init__(self):
-        initialize()
-
-    def initialize():
+    def __init__(self, filepath):
         self.__img = None
         self.__axis_mapping = {0: 0, 1: 1, 2: 2}  # Oasis-3 axis
         self.__rotation = None 
         self.__size_trasnsformers = {}
+
+        self._load(filepath)
         
-    def load(self, filepath):
+
+        
+    def _load(self, filepath):
         """Loads the MRI from the disk.
 
         There are two main cases to check here:
@@ -26,9 +27,6 @@ class NiftiMri:
         (2) The passed in filepath already exist in the db.
         Axis mappings and roation are loaded from the db.
         """
-        initialize()
-        if existsInDB(filepath):
-            self.__axis_mapping, self.__rotation = loadFromDb() 
         self.__img = nib.load(filepath).get_fdata()
 
     def bind_size_transformer(self, axis, x, y):

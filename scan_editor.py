@@ -149,12 +149,12 @@ class RightPaneView:
         print(fullpath) 
         self.__scan_data = cs.loadMRI(fullpath) 
         self.remove_images()
-        fig, axs = plt.subplots(3, 5, figsize=(85, 85))
+        fig, axs = plt.subplots(1, 3, figsize=(85, 85))
         dfc1 = 0.5
         for index, axis in enumerate([0, 1, 2]):
             img = self.__scan_data.get_slice(axis=axis)
-            axs[index, 0].imshow(img)
-            axs[index, 0].set_title(f"slice: {-1 * dfc1} ")
+            axs[index].imshow(img)
+            axs[index].set_title(f"slice: {-1 * dfc1} ")
         fig.subplots_adjust(hspace=1.2)
         canvas = FigureCanvasTkAgg(fig, master=self.__parent_frame)
         canvas.draw()
