@@ -1,6 +1,7 @@
-import sqlite3
 
-DB_PATH = "/home/john/repos/cogni_scan/db/junk.db"
+import nibabel as nib
+
+import cogni_scan.src.imp
 
 AXES = [
     (0, 1, 2),
@@ -23,6 +24,10 @@ ROTATIONS = [
 ]
 
 
+def loadMRI(filepath):
+    return nib.load(filepath).get_fdata()
+
+
 def saveMri(path, axes=None, rotation=None):
     """Saves the transforation data for the passed in path to MRI.
 
@@ -33,27 +38,26 @@ def saveMri(path, axes=None, rotation=None):
     if axes is None:
         axes = 0, 1, 2
     if rotation is None:
-        rotation = ''
+        ratation = ''
     if axes not in AXES or rotation not in ROTATIONS:
         raise ValueError
 
     axis_0, axis_1, axis_2 = axes
 
     sql = f"""
-        INSERT INTO 
-            mri(path,axis_0,axis_1,axis_2,rotation) 
+        INSERT INTO
+            mri(path,axis_0,axis_1,axis_2,rotation)
         VALUES
             ('{path}', {axis_0}, {axis_1}, {axis_2}, '{rotation}' )
-        ON CONFLICT(path) DO 
+        ON CONFLICT(path) DO
         UPDATE SET
             axis_0={axis_0},
             axis_1={axis_1},
             axis_2={axis_2},
-            rotation='{rotation}'
+            rotation={rotation};
     """
 
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(sql)
+    print(sql)
 
 
 if __name__ == '__main__':
