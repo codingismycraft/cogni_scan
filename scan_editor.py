@@ -17,6 +17,7 @@ import cv2
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import cogni_scan.src.utils as cs
+import cogni_scan.oasis_2_mri as oasis_2_mri
 
 HOME_DIR = pathlib.Path.home()
 OASIS3_ROOT = os.path.join(HOME_DIR, "oasis3-scans")
@@ -40,10 +41,19 @@ def discover_all_image_files(directory=None):
     :returns: A list of all the nifti files found in the passed in directory.
     :rtype: list
     """
+
     return [
-        "/home/john/oasis3-scans/OAS30983_MR_d0265/scans/anat3-T1w/resources/NIFTI/files/sub-OAS30983_ses-d0265_run-02_T1w.nii.gz",
-        "/home/john/oasis3-scans/OAS30011_MR_d1671/scans/anat2-T1w/resources/NIFTI/files/sub-OAS30011_ses-d1671_T1w.nii.gz",
+        "/home/john/junk/highres001.nii",
+        "/home/john/junk/ADNI_136_S_1227_MR_MPR____N3__Scaled_Br_20070810000731580_S26837_I66824.nii"
+
     ]
+
+    # return oasis_2_mri.OASIS2_MRI
+    #
+    # return [
+    #     "/home/john/oasis3-scans/OAS30983_MR_d0265/scans/anat3-T1w/resources/NIFTI/files/sub-OAS30983_ses-d0265_run-02_T1w.nii.gz",
+    #     "/home/john/oasis3-scans/OAS30011_MR_d1671/scans/anat2-T1w/resources/NIFTI/files/sub-OAS30011_ses-d1671_T1w.nii.gz",
+    # ]
 
     if directory is None:
         directory = OASIS3_ROOT
