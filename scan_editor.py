@@ -167,14 +167,15 @@ class RightPaneView:
 
         # Clean up existing images.
         self.remove_images()
+
         # Add the buttons to change the axis orienation.
-        canvas = Canvas(self.__parent_frame, width=600, height=200, bg='bisque')
+        canvas = Canvas(self.__parent_frame, width=600, height=60, bg='bisque')
         canvas.pack(fill=BOTH, expand=False, side=TOP)
         canvas.place(x=20, y=30)
 
-        def changeAxis(orientation):
+        def changeAxis(axis_mapping):
             assert self._scan_data
-            self._scan_data.setAxisMapping(orientation)
+            self._scan_data.setAxisMapping(axis_mapping)
             self.update_scan()
 
         for axis in cs.getAxesOrientation():
@@ -182,6 +183,22 @@ class RightPaneView:
             button = Button(canvas, text=axis, command=callback)
             button.pack(pady=20, side=LEFT)
 
+        # Add the buttons to rotate the slices if needed.
+        canvas1 = Canvas(self.__parent_frame, width=600, height=60, bg='green')
+        canvas1.pack(fill=BOTH, expand=False, side=TOP)
+        canvas1.place(x=20, y=100)
+
+        def changeOrienation(axis):
+            assert self._scan_data
+            self._scan_data.changeOrienation(axis)
+            self.update_scan()
+
+        for axis in [0, 1,2 ]:
+            callback = functools.partial(changeOrienation, axis)
+            button = Button(canvas1, text="R", command=callback)
+            button.pack(pady=20, side=LEFT)
+
+        # Add the canvas where the slices are drawn.
         self.img_canvas_width = 800
         self.img_canvas_height = 600
 
