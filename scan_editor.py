@@ -183,7 +183,8 @@ class RightPaneView:
         button_canvas.pack(fill=BOTH, expand=False, side=TOP)
         button_canvas.place(x=20, y=3)
         def saveChanges():
-            print("not implemented")
+            if self._scan_data:
+                self._scan_data.saveToDb()
             updateSaveButtonState()
         self._save_button = Button(button_canvas, text="Save", command=saveChanges)
         self._save_button.pack(pady=20, side=LEFT)

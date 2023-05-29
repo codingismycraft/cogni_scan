@@ -1,5 +1,28 @@
+import json
+
 import cv2
 import nibabel as nib
+import psycopg2
+
+import cogni_scan.src.dbutil as dbutil
+
+UPSERT_SQL = """
+    INSERT INTO scan (
+        fullpath,
+        axis ,
+        rotation 
+    )
+    VALUES ( '{fullpath}', '{axis}', '{rotation}')
+    ON CONFLICT (fullpath) DO UPDATE
+        SET axis='{axis}', rotation='{rotation}';
+""".format
+
+SELECT_SQL = """
+    Select axis, rotation 
+    from scan 
+    where fullpath = '{fullpath}';
+""".format
+
 
 
 class NiftiMri:
@@ -10,7 +33,26 @@ class NiftiMri:
         self.__rotation = [0, 0, 0]
         self.__filepath = filepath
         self.__img = nib.load(self.__filepath).get_fdata()
+        self._loadFromDb()
         self.__is_dirty = False
+
+    def saveToDb(self):
+        axis = json.dumps(self.__axis_mapping)
+        rotation = json.dumps(self.__rotation)
+        sql = UPSERT_SQL(
+            fullpath=self.__filepath,
+            axis=axis,
+            rotation=rotation,
+        )
+        dbutil.execute_non_query(sql)
+        self.__is_dirty = False
+
+    def _loadFromDb(self):
+        sql = SELECT_SQL(fullpath=self.__filepath)
+        for row in dbutil.execute_query(sql):
+            axis = row[0]
+            self.__axis_mapping = { int(k): v for k, v in axis.items() }
+            self.__rotation = row[1]
 
     def isDirty(self):
         return self.__is_dirty
@@ -86,3 +128,13 @@ class NiftiMri:
         #     )
         # else:
         #     return img
+
+
+if __name__ == '__main__':
+    f = "/home/john/repos/cogni_scan/src/impl/tests/testing_data/mri-1.nii.gz"
+    nm = NiftiMri(f)
+    #nm.saveToDb()
+
+
+
+
