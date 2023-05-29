@@ -164,19 +164,41 @@ class RightPaneView:
     def refresh_images(self, fullpath):
         """Refreshes the scan images."""
         print(fullpath)
+        self._save_button = None
 
         # Clean up existing images.
         self.remove_images()
 
+        def updateSaveButtonState():
+            if not self._save_button:
+                return
+            if self._scan_data and self._scan_data.isDirty():
+                self._save_button["state"] = "normal"
+            else:
+                self._save_button["state"] = "disabled"
+
+
+        # Add the save button.
+        button_canvas = Canvas(self.__parent_frame, width=600, height=60, bg='orange')
+        button_canvas.pack(fill=BOTH, expand=False, side=TOP)
+        button_canvas.place(x=20, y=3)
+        def saveChanges():
+            print("not implemented")
+            updateSaveButtonState()
+        self._save_button = Button(button_canvas, text="Save", command=saveChanges)
+        self._save_button.pack(pady=20, side=LEFT)
+
+
         # Add the buttons to change the axis orienation.
         canvas = Canvas(self.__parent_frame, width=600, height=60, bg='bisque')
         canvas.pack(fill=BOTH, expand=False, side=TOP)
-        canvas.place(x=20, y=30)
+        canvas.place(x=20, y=60)
 
         def changeAxis(axis_mapping):
             assert self._scan_data
             self._scan_data.setAxisMapping(axis_mapping)
             self.update_scan()
+            updateSaveButtonState()
 
         for axis in cs.getAxesOrientation():
             callback = functools.partial(changeAxis, axis)
@@ -186,12 +208,13 @@ class RightPaneView:
         # Add the buttons to rotate the slices if needed.
         canvas1 = Canvas(self.__parent_frame, width=600, height=60, bg='green')
         canvas1.pack(fill=BOTH, expand=False, side=TOP)
-        canvas1.place(x=20, y=100)
+        canvas1.place(x=20, y=130)
 
         def changeOrienation(axis):
             assert self._scan_data
             self._scan_data.changeOrienation(axis)
             self.update_scan()
+            updateSaveButtonState()
 
         for axis in [0, 1,2 ]:
             callback = functools.partial(changeOrienation, axis)
@@ -210,7 +233,7 @@ class RightPaneView:
         )
 
         self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
-        self._image_canvas.place(x=20, y=200)
+        self._image_canvas.place(x=20, y=230)
 
         tk.Misc.lift(canvas)
 
@@ -218,6 +241,7 @@ class RightPaneView:
         if not self._scan_data or self._scan_data.getFilePath() != fullpath:
             self._scan_data = cs.loadMRI(fullpath)
         self.update_scan()
+        updateSaveButtonState()
 
     def update_scan(self):
         self.imgs = [

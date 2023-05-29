@@ -10,6 +10,10 @@ class NiftiMri:
         self.__rotation = [0, 0, 0]
         self.__filepath = filepath
         self.__img = nib.load(self.__filepath).get_fdata()
+        self.__is_dirty = False
+
+    def isDirty(self):
+        return self.__is_dirty
 
     def getFilePath(self):
         return self.__filepath
@@ -21,6 +25,7 @@ class NiftiMri:
         r += 1
         r = r % 4
         self.__rotation[axis] = r
+        self.__is_dirty = True
 
     def setAxisMapping(self, axis_mapping):
         """Binds an axis mapping (used for Oasis-2 for example).
@@ -47,6 +52,7 @@ class NiftiMri:
             index: value
             for index, value in enumerate(axis_mapping)
         }
+        self.__is_dirty = True
 
     @property
     def axis_mapping(self):
