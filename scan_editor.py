@@ -3,6 +3,8 @@ import os
 import pathlib
 import datetime
 
+from PIL import ImageTk
+import PIL.Image
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import simpledialog
@@ -10,6 +12,7 @@ from tkinter import *
 from tkinter.constants import *
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import cv2
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -17,6 +20,16 @@ import cogni_scan.src.utils as cs
 
 HOME_DIR = pathlib.Path.home()
 OASIS3_ROOT = os.path.join(HOME_DIR, "oasis3-scans")
+
+
+def saveSlicesToDisk(scan_data):
+    filenames = []
+    for axis in [0, 1, 2]:
+        filename = f"slice_{axis}.jpg"
+        filenames.append(filename)
+        img = scan_data.get_slice(axis=axis)
+        cv2.imwrite(filename, img)
+    return filenames
 
 
 def discover_all_image_files(directory=None):
@@ -27,6 +40,11 @@ def discover_all_image_files(directory=None):
     :returns: A list of all the nifti files found in the passed in directory.
     :rtype: list
     """
+    return [
+        "/home/john/oasis3-scans/OAS30983_MR_d0265/scans/anat3-T1w/resources/NIFTI/files/sub-OAS30983_ses-d0265_run-02_T1w.nii.gz",
+        "/home/john/oasis3-scans/OAS30011_MR_d1671/scans/anat2-T1w/resources/NIFTI/files/sub-OAS30011_ses-d1671_T1w.nii.gz",
+    ]
+
     if directory is None:
         directory = OASIS3_ROOT
     files = []
@@ -146,42 +164,56 @@ class RightPaneView:
     def refresh_images(self, fullpath):
         """Refreshes the scan images."""
         print(fullpath)
+
         # Clean up existing images.
         self.remove_images()
         # Add the buttons to change the axis orienation.
         canvas = Canvas(self.__parent_frame, width=600, height=200, bg='bisque')
         canvas.pack(fill=BOTH, expand=False, side=TOP)
+        canvas.place(x=20, y=30)
+
         def changeAxis(orientation):
             assert self._scan_data
             self._scan_data.setAxisMapping(orientation)
             self.update_scan()
+
         for axis in cs.getAxesOrientation():
-            callback = functools.partial(changeAxis, axis) 
+            callback = functools.partial(changeAxis, axis)
             button = Button(canvas, text=axis, command=callback)
-            button.pack(pady=20,side=LEFT)
-       
+            button.pack(pady=20, side=LEFT)
+
+        self.img_canvas_width = 800
+        self.img_canvas_height = 600
+
+        self._image_canvas = Canvas(
+            self.__parent_frame,
+            width=self.img_canvas_width,
+            height=self.img_canvas_height,
+            bg='blue'
+        )
+
+        self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
+        self._image_canvas.place(x=20, y=200)
+
+        tk.Misc.lift(canvas)
+
         # Load the Mri object if needed.
         if not self._scan_data or self._scan_data.getFilePath() != fullpath:
             self._scan_data = cs.loadMRI(fullpath)
-
-        # Update the image view for the active scan.
         self.update_scan()
-            
-    def update_scan(self):
-        if self._image_canvas:
-            self._image_canvas.get_tk_widget().destroy()
-        fig, axs = plt.subplots(1, 3, figsize=(85, 85))
-        dfc1 = 0.5
-        for index, axis in enumerate([0, 1, 2]):
-            img = self._scan_data.get_slice(axis=axis)
-            axs[index].imshow(img,cmap=cm.gist_yarg, interpolation=None)
-            axs[index].set_title(f"slice: {-1 * dfc1} ")
-        fig.subplots_adjust(hspace=1.2)
-        canvas = FigureCanvasTkAgg(fig, master=self.__parent_frame)
-        canvas.draw() # This is the time consuming part!
-        canvas.get_tk_widget().pack(side=BOTTOM)
-        self._image_canvas = canvas
 
+    def update_scan(self):
+        self.imgs = [
+            ImageTk.PhotoImage(PIL.Image.open(file))
+            for file in saveSlicesToDisk(self._scan_data)
+        ]
+
+        x, y = 0, 130
+        n = len(self.imgs)
+
+        for img in self.imgs:
+            self._image_canvas.create_image(x, y, anchor=W, image=img)
+            x += self.img_canvas_width / n
 
 
 def main():
