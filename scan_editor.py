@@ -1,12 +1,15 @@
 import functools
 import os
 import pathlib
+import datetime
 
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import simpledialog
-
+from tkinter import *
+from tkinter.constants import *
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -37,10 +40,9 @@ def discover_all_image_files(directory=None):
                 files.extend(discover_all_image_files(fullpath))
     return files
 
+
 def discoverScans():
     return discover_all_image_files()
-
-
 
 
 def make_menu_bar(root):
@@ -96,13 +98,15 @@ def tree_item_selected(tree_view_ctrl, right_view, window_label, event):
 class RightPaneView:
     def __init__(self, parent_frame):
         self.__parent_frame = parent_frame
-        self.__scan_data = None
+        self._scan_data = None
         self.__size_scale = None
+        self._image_canvas = None
 
     def clear(self):
         """Clears the frame from all widgets."""
         for widget in self.__parent_frame.winfo_children():
             widget.destroy()
+        self._image_canvas = None
 
     def remove_images(self):
         """Removes only the images from the frame.
@@ -111,7 +115,7 @@ class RightPaneView:
         to the user re-sizing the image size.
         """
         for widget in self.__parent_frame.winfo_children():
-            if type(widget) is ttk.Scale:
+            if isinstance(widget, ttk.Scale):
                 continue
             widget.destroy()
 
@@ -140,25 +144,44 @@ class RightPaneView:
         self.__size_scale.pack()
 
     def refresh_images(self, fullpath):
-        """Refreshes the scan images.
-
-        Called either the first time that the right pane is update when
-        the user selects a new scan from the tree view or when the user
-        changes the image size using the scaler.
-        """
-        print(fullpath) 
-        self.__scan_data = cs.loadMRI(fullpath) 
+        """Refreshes the scan images."""
+        print(fullpath)
+        # Clean up existing images.
         self.remove_images()
+        # Add the buttons to change the axis orienation.
+        canvas = Canvas(self.__parent_frame, width=600, height=200, bg='bisque')
+        canvas.pack(fill=BOTH, expand=False, side=TOP)
+        def changeAxis(orientation):
+            assert self._scan_data
+            self._scan_data.setAxisMapping(orientation)
+            self.update_scan()
+        for axis in cs.getAxesOrientation():
+            callback = functools.partial(changeAxis, axis) 
+            button = Button(canvas, text=axis, command=callback)
+            button.pack(pady=20,side=LEFT)
+       
+        # Load the Mri object if needed.
+        if not self._scan_data or self._scan_data.getFilePath() != fullpath:
+            self._scan_data = cs.loadMRI(fullpath)
+
+        # Update the image view for the active scan.
+        self.update_scan()
+            
+    def update_scan(self):
+        if self._image_canvas:
+            self._image_canvas.get_tk_widget().destroy()
         fig, axs = plt.subplots(1, 3, figsize=(85, 85))
         dfc1 = 0.5
         for index, axis in enumerate([0, 1, 2]):
-            img = self.__scan_data.get_slice(axis=axis)
-            axs[index].imshow(img)
+            img = self._scan_data.get_slice(axis=axis)
+            axs[index].imshow(img,cmap=cm.gist_yarg, interpolation=None)
             axs[index].set_title(f"slice: {-1 * dfc1} ")
         fig.subplots_adjust(hspace=1.2)
         canvas = FigureCanvasTkAgg(fig, master=self.__parent_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack()
+        canvas.draw() # This is the time consuming part!
+        canvas.get_tk_widget().pack(side=BOTTOM)
+        self._image_canvas = canvas
+
 
 
 def main():
@@ -171,7 +194,11 @@ def main():
     panedwindow = ttk.Panedwindow(root, orient=tk.HORIZONTAL)
     panedwindow.pack(fill=tk.BOTH, expand=True)
 
-    left_frame = ttk.Frame(panedwindow, width=100, height=300, relief=tk.SUNKEN)
+    left_frame = ttk.Frame(
+        panedwindow,
+        width=100,
+        height=300,
+        relief=tk.SUNKEN)
     right_frame = ttk.Frame(panedwindow, width=400, height=400,
                             relief=tk.SUNKEN)
 
