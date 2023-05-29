@@ -1,7 +1,5 @@
 import cv2
-
 import nibabel as nib
-
 
 
 class NiftiMri:
@@ -9,36 +7,31 @@ class NiftiMri:
     def __init__(self, filepath):
         self.__img = None
         self.__axis_mapping = {0: 0, 1: 1, 2: 2}  # Oasis-3 axis
-        self.__rotation = None 
-        self.__size_trasnsformers = {}
+        self.__rotation = [0, 0, 0]
+        self.__filepath = filepath
+        self.__img = nib.load(self.__filepath).get_fdata()
 
-        self._load(filepath)
-        
+    def getFilePath(self):
+        return self.__filepath
 
-        
-    def _load(self, filepath):
-        """Loads the MRI from the disk.
+    def changeOrienation(self, axis):
+        assert 0 <= axis <= 2
+        axis = self.__axis_mapping.get(axis)
+        r = self.__rotation[axis]
+        r += 1
+        r = r % 4
+        self.__rotation[axis] = r
 
-        There are two main cases to check here:
-
-        (1) The passed in filepath does not exist in the db.
-        Axis mappings and roation use the default values.
-
-        (2) The passed in filepath already exist in the db.
-        Axis mappings and roation are loaded from the db.
-        """
-        self.__img = nib.load(filepath).get_fdata()
-
-    def bind_size_transformer(self, axis, x, y):
-        self.__size_trasnsformers[axis] = (x, y)
-
-    def bind_axis_mapping(self, axis_mapping):
+    def setAxisMapping(self, axis_mapping):
         """Binds an axis mapping (used for Oasis-2 for example).
 
         :param tuple axis_mapping: Permutation of 0, 1, 2
 
         :raises ValueError: If axis mapping is not a permutation of 0,1,2.
         """
+        self.__rotation = [0, 0, 0]
+        tokens = axis_mapping.split('-')
+        axis_mapping = tuple([int(x) for x in tokens])
         if not isinstance(axis_mapping, tuple):
             raise ValueError
         if not len(axis_mapping) == 3:
@@ -72,12 +65,18 @@ class NiftiMri:
             img = self.__img[:, :, n]
         else:
             return ValueError
-        if axis in self.__size_trasnsformers:
-            x, y = self.__size_trasnsformers[axis]
-            return cv2.resize(
-                img,
-                dsize=(x, y),
-                interpolation=cv2.INTER_CUBIC
-            )
-        else:
-            return img
+
+        for _ in range(self.__rotation[axis]):
+            img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        return img
+
+        # if axis in self.__size_trasnsformers:
+        #     x, y = self.__size_trasnsformers[axis]
+        #     return cv2.resize(
+        #         img,
+        #         dsize=(x, y),
+        #         interpolation=cv2.INTER_CUBIC
+        #     )
+        # else:
+        #     return img

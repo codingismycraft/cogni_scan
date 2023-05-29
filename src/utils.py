@@ -25,6 +25,12 @@ ROTATIONS = [
     ''
 ]
 
+def getAxesOrientation():
+    axes = []
+    for a1, a2, a3 in AXES:
+        axes.append(f"{a1}-{a2}-{a3}")
+    return axes
+
 
 def loadMRI(filepath):
     return nm.NiftiMri(filepath)
