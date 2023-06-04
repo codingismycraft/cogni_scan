@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import cv2
 
+import cogni_scan.src.nifti_mri as nifti_mri
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import cogni_scan.src.utils as cs
@@ -33,45 +34,10 @@ def saveSlicesToDisk(scan_data):
     return filenames
 
 
-def discover_all_image_files(directory=None):
-    """Discovers all the nifti files under the passed in directory.
-
-    :param str directory: The directory to look up for nifti files.
-
-    :returns: A list of all the nifti files found in the passed in directory.
-    :rtype: list
-    """
-
-    return [
-        "/home/john/junk/highres001.nii",
-        "/home/john/junk/ADNI_136_S_1227_MR_MPR____N3__Scaled_Br_20070810000731580_S26837_I66824.nii"
-
-    ]
-
-    # return oasis_2_mri.OASIS2_MRI
-    #
-    # return [
-    #     "/home/john/oasis3-scans/OAS30983_MR_d0265/scans/anat3-T1w/resources/NIFTI/files/sub-OAS30983_ses-d0265_run-02_T1w.nii.gz",
-    #     "/home/john/oasis3-scans/OAS30011_MR_d1671/scans/anat2-T1w/resources/NIFTI/files/sub-OAS30011_ses-d1671_T1w.nii.gz",
-    # ]
-
-    if directory is None:
-        directory = OASIS3_ROOT
-    files = []
-    for file in os.listdir(directory):
-        fullpath = os.path.join(directory, file).strip()
-        if os.path.isfile(fullpath):
-            if fullpath.endswith("nii.gz"):
-                files.append(fullpath)
-        else:
-            if fullpath:
-                files.extend(discover_all_image_files(fullpath))
-    return files
-
-
-def discoverScans():
-    return discover_all_image_files()
-
+def skip_marked_as_skipped():
+    global MRIS
+    MRIS = nifti_mri.load_from_db(skip=True)
+    main()
 
 def make_menu_bar(root):
     def donothing():
@@ -84,7 +50,7 @@ def make_menu_bar(root):
     menubar.add_cascade(label="File", menu=filemenu)
 
     helpmenu = tk.Menu(menubar, tearoff=0)
-    helpmenu.add_command(label="Filter Subjects", command=donothing)
+    helpmenu.add_command(label="Skip Marked as skipped", command=skip_marked_as_skipped)
     menubar.add_cascade(label="Options", menu=helpmenu)
 
     helpmenu = tk.Menu(menubar, tearoff=0)
@@ -104,7 +70,7 @@ def make_subject_tree(parent):
     """
     tree = ttk.Treeview(parent)
     tree.heading('#0', text='Subject ID', anchor=tk.W)
-    for patient in discoverScans():
+    for patient in MRIS:
         label = patient
         caption = patient
         tree.insert('', tk.END, text=caption, iid=patient, open=False)
@@ -174,6 +140,9 @@ class RightPaneView:
     def refresh_images(self, fullpath):
         """Refreshes the scan images."""
         print(fullpath)
+        # Load the Mri object if needed.
+        if not self._scan_data or self._scan_data.getFilePath() != fullpath:
+            self._scan_data = MRIS[fullpath]
         self._save_button = None
 
         # Clean up existing images.
@@ -187,18 +156,20 @@ class RightPaneView:
             else:
                 self._save_button["state"] = "disabled"
 
-
         # Add the save button.
-        button_canvas = Canvas(self.__parent_frame, width=600, height=60, bg='orange')
+        button_canvas = Canvas(self.__parent_frame, width=600, height=60,
+                               bg='orange')
         button_canvas.pack(fill=BOTH, expand=False, side=TOP)
         button_canvas.place(x=20, y=3)
+
         def saveChanges():
             if self._scan_data:
                 self._scan_data.saveToDb()
             updateSaveButtonState()
-        self._save_button = Button(button_canvas, text="Save", command=saveChanges)
-        self._save_button.pack(pady=20, side=LEFT)
 
+        self._save_button = Button(button_canvas, text="Save",
+                                   command=saveChanges)
+        self._save_button.pack(pady=20, side=LEFT)
 
         # Add the buttons to change the axis orienation.
         canvas = Canvas(self.__parent_frame, width=600, height=60, bg='bisque')
@@ -227,10 +198,15 @@ class RightPaneView:
             self.update_scan()
             updateSaveButtonState()
 
-        for axis in [0, 1,2 ]:
+        for axis in [0, 1, 2]:
             callback = functools.partial(changeOrienation, axis)
             button = Button(canvas1, text="R", command=callback)
             button.pack(pady=20, side=LEFT)
+
+        # Add the descriptive data
+        text = Label(self.__parent_frame, text=self._scan_data.getHealthStatus())
+        text.place(x=20, y=200);
+
 
         # Add the canvas where the slices are drawn.
         self.img_canvas_width = 800
@@ -244,15 +220,13 @@ class RightPaneView:
         )
 
         self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
-        self._image_canvas.place(x=20, y=230)
+        self._image_canvas.place(x=20, y=290)
 
         tk.Misc.lift(canvas)
-
-        # Load the Mri object if needed.
-        if not self._scan_data or self._scan_data.getFilePath() != fullpath:
-            self._scan_data = cs.loadMRI(fullpath)
         self.update_scan()
         updateSaveButtonState()
+
+
 
     def update_scan(self):
         self.imgs = [
@@ -304,4 +278,5 @@ def main():
 
 
 if __name__ == '__main__':
+    MRIS = nifti_mri.load_from_db()
     main()

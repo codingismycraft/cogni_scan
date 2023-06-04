@@ -1,4 +1,5 @@
 import json
+import os.path
 
 import cv2
 import nibabel as nib
@@ -6,15 +7,29 @@ import psycopg2
 
 import cogni_scan.src.dbutil as dbutil
 
-UPSERT_SQL = """
+INSERT_SQL = """
     INSERT INTO scan (
         fullpath,
-        axis ,
-        rotation 
+        days,
+        patiend_id,
+        origin,
+        skipit,
+        health_status,
+        axis, 
+        rotation
     )
-    VALUES ( '{fullpath}', '{axis}', '{rotation}')
-    ON CONFLICT (fullpath) DO UPDATE
-        SET axis='{axis}', rotation='{rotation}';
+    VALUES ( 
+        '{fullpath}', {days} ,'{patiend_id}', '{origin}', 
+        {skipit}, {health_status}, '{axis}', '{rotation}'
+    )
+""".format
+
+
+UPDATE_SQL = """
+    Update 
+        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}'
+    where
+        fullpath='{fullpath}'
 """.format
 
 SELECT_SQL = """
@@ -23,26 +38,61 @@ SELECT_SQL = """
     where fullpath = '{fullpath}';
 """.format
 
+DEFAULT_AXIS_MAPPING = json.dumps({0: 0, 1: 1, 2: 2})
+DEFAULT_ORIENTATION = json.dumps([0, 0, 0])
+
+
+def insert_to_db(fullpath, days, origin, patiend_id, health_status):
+    assert os.path.isfile(fullpath)
+    assert 0 <= health_status <= 2
+    sql = INSERT_SQL(
+        fullpath=fullpath,
+        days=days,
+        patiend_id=patiend_id,
+        origin=origin,
+        skipit=0,
+        health_status=health_status,
+        axis=DEFAULT_AXIS_MAPPING,
+        rotation=DEFAULT_ORIENTATION
+    )
+    dbutil.execute_non_query(sql)
+
+
+def load_from_db(skip=False):
+    mris = {}
+    sql = "select fullpath, days, patiend_id, origin, skipit, health_status, axis, rotation from scan where skipit = 0 order by fullpath"
+    for row in dbutil.execute_query(sql):
+        mris[row[0]] = NiftiMri(*row)
+    return mris
+
+def load_only_converted():
+    pass
 
 
 class NiftiMri:
 
-    def __init__(self, filepath):
+    def __init__(self, fullpath, days, patiend_id,
+                 origin, skipit, health_status, axis, rotation):
         self.__img = None
-        self.__axis_mapping = {0: 0, 1: 1, 2: 2}  # Oasis-3 axis
-        self.__rotation = [0, 0, 0]
-        self.__filepath = filepath
-        self.__img = nib.load(self.__filepath).get_fdata()
-        self._loadFromDb()
+        self.__filepath = fullpath
+        self.__days = days
+        self.__patient_id = patiend_id
+        self.__origin = origin
+        self.__skipit = skipit
+        self.__health_status = health_status
+        self.__axis_mapping = {int(k): v for k, v in axis.items()}
+        self.__rotation = rotation
+        self.__img = None
         self.__is_dirty = False
 
     def saveToDb(self):
         axis = json.dumps(self.__axis_mapping)
         rotation = json.dumps(self.__rotation)
-        sql = UPSERT_SQL(
-            fullpath=self.__filepath,
+        sql = UPDATE_SQL(
+            skipit=self.__skipit,
             axis=axis,
             rotation=rotation,
+            fullpath=self.__filepath
         )
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
@@ -51,7 +101,7 @@ class NiftiMri:
         sql = SELECT_SQL(fullpath=self.__filepath)
         for row in dbutil.execute_query(sql):
             axis = row[0]
-            self.__axis_mapping = { int(k): v for k, v in axis.items() }
+            self.__axis_mapping = {int(k): v for k, v in axis.items()}
             self.__rotation = row[1]
 
     def isDirty(self):
@@ -59,6 +109,16 @@ class NiftiMri:
 
     def getFilePath(self):
         return self.__filepath
+
+    def getHealthStatus(self):
+        if self.__health_status == 0:
+            return "healthy"
+        elif self.__health_status == 1:
+            return "uncertain"
+        elif self.__health_status == 2:
+            return "demented"
+        else:
+            return "unknown"
 
     def changeOrienation(self, axis):
         assert 0 <= axis <= 2
@@ -101,6 +161,8 @@ class NiftiMri:
         return self.__axis_mapping.copy()
 
     def get_slice(self, distance_from_center=0, axis=2):
+        if self.__img is None:
+            self.__img = nib.load(self.__filepath).get_fdata()
         axis = self.__axis_mapping.get(axis)
         assert self.__img is not None
         assert -1. <= distance_from_center <= 1.
@@ -131,10 +193,9 @@ class NiftiMri:
 
 
 if __name__ == '__main__':
-    f = "/home/john/repos/cogni_scan/src/impl/tests/testing_data/mri-1.nii.gz"
-    nm = NiftiMri(f)
-    #nm.saveToDb()
-
-
-
-
+    a = load_from_db()
+    for x in a:
+        print(x)
+    # f = "/home/john/repos/cogni_scan/src/impl/tests/testing_data/mri-1.nii.gz"
+    # nm = NiftiMri(f)
+    # nm.saveToDb()
