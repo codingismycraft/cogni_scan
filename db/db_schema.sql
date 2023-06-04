@@ -3,12 +3,18 @@ CREATE TABLE scan
 (
     scan_id SERIAL PRIMARY KEY,
     fullpath VARCHAR(512) NOT NULL,
+    days int NOT NULL,
+    patiend_id VARCHAR(512) NOT NULL,
+    origin VARCHAR(512) NOT NULL, -- oasis2, oasis3, adni etc
+    skipit int default 0, -- if 1 then it should be skipped for training.
+    health_status int default 0,  -- 0: healthy, 1: Mild 2: Demented
     axis jsonb NOT NULL,
     rotation jsonb NOT NULL,
     UNIQUE(fullpath)
 );
 
 
+-- stores VGG16 generated feautures
 CREATE TABLE scan_features
 (
     feature_id SERIAL PRIMARY KEY,
