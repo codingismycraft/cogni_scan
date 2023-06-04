@@ -44,6 +44,13 @@ https://ida.loni.usc.edu/pages/access/search.jsp?tab=simpleSearch&project=ADNI&p
 we were able to discover the MRIs for the specific patients that we
 are interested in.
 
+Used this SQL to select the ADNI patients that entered healthy and exited
+demented.
+
+```
+Select distinct PTID from clinical_data where DX = 'NL' and PTID in
+(Select distinct (PTID) from clinical_data where DX='Dementia')
+```
 
 ## TODO LIST
 
