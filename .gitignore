@@ -12,6 +12,8 @@ pt.sh
 # Ignore todo
 todo.md
 
+.idea
+
 # Distribution / packaging
 .Python
 build/
