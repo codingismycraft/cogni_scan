@@ -85,6 +85,9 @@ class NiftiMri:
         self.__img = None
         self.__is_dirty = False
 
+    def __repr__(self):
+        return f'NiftiMri({self.__filepath})'
+
     def saveToDb(self):
         axis = json.dumps(self.__axis_mapping)
         rotation = json.dumps(self.__rotation)
@@ -96,6 +99,24 @@ class NiftiMri:
         )
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
+
+    def shouldBeSkiped(self):
+        return self.__skipit
+
+    def getOrigin(self):
+        return self.__origin
+
+    def getDays(self):
+        return self.__days
+
+    def getFilePath(self):
+        return self.__filepath
+
+    def getPatientID(self):
+        return self.__patient_id
+
+    def getCaption(self):
+        return f'{self.__patient_id}:{self.__days}'
 
     def _loadFromDb(self):
         sql = SELECT_SQL(fullpath=self.__filepath)
