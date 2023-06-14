@@ -7,22 +7,6 @@ import psycopg2
 
 import cogni_scan.src.dbutil as dbutil
 
-INSERT_SQL = """
-    INSERT INTO scan (
-        fullpath,
-        days,
-        patiend_id,
-        origin,
-        skipit,
-        health_status,
-        axis, 
-        rotation
-    )
-    VALUES ( 
-        '{fullpath}', {days} ,'{patiend_id}', '{origin}', 
-        {skipit}, {health_status}, '{axis}', '{rotation}'
-    )
-""".format
 
 
 UPDATE_SQL = """
@@ -38,41 +22,33 @@ SELECT_SQL = """
     where fullpath = '{fullpath}';
 """.format
 
-DEFAULT_AXIS_MAPPING = json.dumps({0: 0, 1: 1, 2: 2})
-DEFAULT_ORIENTATION = json.dumps([0, 0, 0])
+
+SQL_SELECT_ALL = """
+select 
+    scan_id, fullpath, days, patiend_id, origin, 
+    skipit, health_status, axis, rotation 
+from 
+    scan
+order by patiend_id, days
+"""
 
 
-def insert_to_db(fullpath, days, origin, patiend_id, health_status):
-    assert os.path.isfile(fullpath)
-    assert 0 <= health_status <= 2
-    sql = INSERT_SQL(
-        fullpath=fullpath,
-        days=days,
-        patiend_id=patiend_id,
-        origin=origin,
-        skipit=0,
-        health_status=health_status,
-        axis=DEFAULT_AXIS_MAPPING,
-        rotation=DEFAULT_ORIENTATION
-    )
-    dbutil.execute_non_query(sql)
-
-
-def load_from_db(skip=False):
-    mris = {}
-    sql = "select fullpath, days, patiend_id, origin, skipit, health_status, axis, rotation from scan where skipit = 0 order by fullpath"
-    for row in dbutil.execute_query(sql):
-        mris[row[0]] = NiftiMri(*row)
-    return mris
-
-def load_only_converted():
-    pass
+def loadFolded():
+    mris = [NiftiMri(*row) for row in dbutil.execute_query(SQL_SELECT_ALL)]
+    folded = {}
+    for mri in mris:
+        patiend_id = mri.getPatientID()
+        if patiend_id not in folded:
+            folded[patiend_id] = []
+        folded[patiend_id].append(mri)
+    return folded
 
 
 class NiftiMri:
 
-    def __init__(self, fullpath, days, patiend_id,
+    def __init__(self, scan_id, fullpath, days, patiend_id,
                  origin, skipit, health_status, axis, rotation):
+        self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
         self.__days = days
@@ -100,8 +76,17 @@ class NiftiMri:
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
 
+    def getPatientDesc(self, patient_id):
+        """Returns the descritive data for the patiend."""
+
+    def getScanID(self):
+        return self.__scan_id
+
     def shouldBeSkiped(self):
         return self.__skipit
+
+    def getMriID(self):
+        return f"{self.__scan_id}:{self.__days:5}:{self.getHealthStatus()}"
 
     def getOrigin(self):
         return self.__origin
@@ -214,9 +199,11 @@ class NiftiMri:
 
 
 if __name__ == '__main__':
-    a = load_from_db()
-    for x in a:
+    mris = loadFolded()
+    for x in mris:
         print(x)
+
+
     # f = "/home/john/repos/cogni_scan/src/impl/tests/testing_data/mri-1.nii.gz"
     # nm = NiftiMri(f)
     # nm.saveToDb()
