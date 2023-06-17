@@ -14,6 +14,16 @@ CREATE TABLE scan
 );
 
 
+CREATE TABLE diagnosis
+(
+    diagnosis_id SERIAL PRIMARY KEY,
+    patient_id VARCHAR(512) NOT NULL,
+    days int NOT NULL,
+    origin VARCHAR(512) NOT NULL, -- oasis2, oasis3, adni etc
+    health_status int default 0,  -- 0: healthy, 1: Mild 2: Demented
+    UNIQUE(patient_id, days)
+);
+
 -- stores VGG16 generated feautures
 CREATE TABLE scan_features
 (
@@ -31,4 +41,6 @@ CREATE TABLE scan_features
     UNIQUE(scan_id)
 );
 
+
+\COPY diagnosis   (patient_id, days, origin, health_status)  FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 

@@ -55,6 +55,7 @@ class RightView(view.View):
             return
 
         def updateSaveButtonState():
+            self.getDocument().updateAllViews(self)
             if not self._save_button:
                 return
             if mri and mri.isDirty():
@@ -72,8 +73,7 @@ class RightView(view.View):
         button_canvas.place(x=20, y=3)
 
         def saveChanges():
-            if mri:
-                mri.saveToDb()
+            self.getDocument().checkToSave()
             updateSaveButtonState()
 
         self._save_button = Button(

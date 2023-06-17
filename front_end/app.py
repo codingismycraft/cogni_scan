@@ -1,14 +1,16 @@
 import functools
 import os
 
+from tkinter import *
 import tkinter as tk
 import tkinter.simpledialog
 import tkinter.ttk as ttk
 
+import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.left_view as left_view
+import cogni_scan.front_end.mri_doc as model
 import cogni_scan.front_end.right_view as right_view
 import cogni_scan.front_end.top_view as top_view
-import cogni_scan.front_end.mri_doc as model
 
 EVENT_EXIT = "EXIT"
 EVENT_FILTER = "FILTER"
@@ -57,7 +59,7 @@ class MyDialog(tkinter.simpledialog.Dialog):
         print(first, second, y)
 
 
-class MainFrame:
+class MainFrame(view.View):
     _root = None
     _views = None
     _document = None
@@ -68,6 +70,13 @@ class MainFrame:
             self._root = None
         elif event == EVENT_FILTER:
             d = MyDialog(self._root)
+
+    def update(self):
+        active_path = "No selection."
+        mri = self.getDocument().getActiveMri()
+        if mri:
+            active_path = mri.getFilePath()
+        self._caption.set(active_path)
 
     def buildMenu(self, menu):
         menubar = tk.Menu(self._root)
@@ -89,7 +98,9 @@ class MainFrame:
         self._root = tk.Tk()
         self._root.title(title)
 
-        window_label = tk.Label(self._root, text="Separating widget")
+        self._caption = StringVar()
+        self._caption.set("New Text!")
+        window_label = tk.Label(self._root, textvariable=self._caption)
         window_label.pack()
 
         # Color Styles..
@@ -167,6 +178,9 @@ class MainFrame:
         # Add the right view.
         right_view = RightView(right_frame)
         self._document.addView(right_view)
+
+        # Self is also a view so lets add it to the document.
+        self._document.addView(self)
 
         # Load the document and start the loop.
         self._document.load()
