@@ -4,6 +4,7 @@ import logging
 import tkinter.ttk as ttk
 import tkinter as tk
 
+import cogni_scan.front_end.settings as settings
 import cogni_scan.front_end.cfc.view as view
 
 logging.basicConfig(level=logging.DEBUG)
@@ -32,6 +33,9 @@ class LeftView(ttk.Treeview, view.View):
 
         Needs to be implemented by the client code.
         """
+        ttk.Style().configure("Treeview", background=settings.LEFT_BACKGROUND_COLOR,
+                              foreground="white", fieldbackground="black")
+
         doc = self.getDocument()
         if not doc.getNeedsToUpdateAll():
             return

@@ -67,7 +67,8 @@ class RightView(view.View):
             self.__parent_frame,
             width=self.img_canvas_width,
             height=self.img_canvas_height,
-            bg=settings.RIGHT_BACKGROUND_COLOR
+            bg=settings.RIGHT_BACKGROUND_COLOR,
+            highlightthickness = 0
         )
         self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
         self._image_canvas.place(x=20, y=20)

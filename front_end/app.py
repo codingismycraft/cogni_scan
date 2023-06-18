@@ -16,6 +16,7 @@ import cogni_scan.front_end.top_view as top_view
 EVENT_EXIT = "EXIT"
 EVENT_FILTER = "FILTER"
 SEPARATOR = "Separator"
+EVENT_ABOUT = "About"
 
 MENU = {
     "File": [
@@ -25,6 +26,11 @@ MENU = {
         ("Filter", EVENT_FILTER),
         (SEPARATOR, None),
         ("Filter", EVENT_FILTER),
+    ],
+    "Help": [
+        ("Filter", EVENT_FILTER),
+        (SEPARATOR, None),
+        ("About", EVENT_ABOUT),
     ]
 }
 
@@ -59,6 +65,10 @@ class MyDialog(tkinter.simpledialog.Dialog):
         y = self.checkbutton_value.get()
         print(first, second, y)
 
+class AboutDialog(tkinter.simpledialog.Dialog):
+    def body(self, master):
+        tk.Label(master, text="Cogni Scan Editor").grid(row=0)
+
 
 class MainFrame(view.View):
     _root = None
@@ -71,6 +81,8 @@ class MainFrame(view.View):
             self._root = None
         elif event == EVENT_FILTER:
             d = MyDialog(self._root)
+        elif event == EVENT_ABOUT:
+            d = AboutDialog(self._root)
 
     def update(self):
         active_path = "No selection."
@@ -106,7 +118,7 @@ class MainFrame(view.View):
 
         # Color Styles..
         self.s = ttk.Style()
-        self.s.configure('TFrame', background='#7AC5CD')
+        self.s.configure('TFrame', background=settings.LEFT_BACKGROUND_COLOR)
 
         self.s1 = ttk.Style()
         self.s1.configure('right.TFrame', background=settings.RIGHT_BACKGROUND_COLOR)
@@ -150,7 +162,7 @@ class MainFrame(view.View):
             width=100,
             height=300,
             relief=tk.SUNKEN,
-            style='TFrame',
+            style='TFrame'
         )
         panedwindow.add(left_frame)
 
