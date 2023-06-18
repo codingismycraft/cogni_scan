@@ -69,6 +69,7 @@ class MRIDocument(document.Document):
                 if not askyesno(
                         title='MRI info was changed.',
                         message='Do you want to save your changes?'):
+                    mri.restoreOriginalState()
                     return
             mri.saveToDb()
 

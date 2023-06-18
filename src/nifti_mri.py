@@ -30,6 +30,14 @@ select a.patient_id, a.health_status from diagnosis a,
 where a.patient_id = b.patient_id and a.days = b.days;
 """
 
+_SQL_SELECT_ONE = """
+select
+    scan_id, fullpath, days, patiend_id, origin,
+    skipit, health_status, axis, rotation
+from
+    scan
+where scan_id={scan_id}
+""".format
 
 def int2HealthStatus(value):
     if value == 0:
@@ -231,8 +239,19 @@ class Scan:
         self.__img = None
         self.__is_dirty = False
 
+
     def __repr__(self):
         return f'NiftiMri({self.__filepath})'
+
+    def restoreOriginalState(self):
+        """Called when the state changes need to be restored.
+
+        Re-Loads the details of the MRI from the database.
+        """
+        sql = _SQL_SELECT_ONE(scan_id=self.__scan_id)
+        for row in dbutil.execute_query(sql):
+            self.__init__(*row)
+
 
     def saveToDb(self):
         axis = json.dumps(self.__axis_mapping)
@@ -254,6 +273,12 @@ class Scan:
 
     def shouldBeSkiped(self):
         return self.__skipit
+
+    def setShouldBeSkiped(self, value):
+        assert value in (0, 1)
+        if self.__skipit != value:
+            self.__skipit = value
+            self.__is_dirty = True
 
     def getMriID(self):
         hs = int2HealthStatus(self.getHealthStatus())

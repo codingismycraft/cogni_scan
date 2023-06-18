@@ -105,16 +105,34 @@ class TopView(view.View):
         self.updateSaveButtonState()
 
         # Add the buttons to change the Axes.
-        for index, axis in enumerate(cs.getAxesOrientation()):
+        column = 0
+        for axis in cs.getAxesOrientation():
             callback = functools.partial(self.changeAxis, axis)
             button = Button(canvas, text=axis, command=callback)
-            button.grid(row=1, column= index)
+            button.grid(row=1, column=column)
+            column += 1
 
         # Add the buttons to rotate the slices if needed.
-        for index, axis in enumerate([0, 1, 2]):
+        for axis in [0, 1, 2]:
             callback = functools.partial(self.changeOrienation, axis)
             button = Button(canvas, text="R", command=callback)
-            button.grid(row=2, column= index)
+            button.grid(row=1, column=column)
+            column += 1
+
+        # Add the skip-it or not.
+        self._skipit_checkbox_var = tk.IntVar()
+        self._skipit_checkbox_var.set(mri.shouldBeSkiped())
+        skipit_checkbox = tk.Checkbutton(
+            canvas, text="Should Be Skipped",
+            variable=self._skipit_checkbox_var, command=self.changeSkipIt)
+        skipit_checkbox.grid(row=2, column=0)
+
+    def changeSkipIt(self):
+        mri = self.getDocument().getActiveMri()
+        if not mri:
+            return
+        value = self._skipit_checkbox_var.get()
+        mri.setShouldBeSkiped(value)
 
     def update(self):
         """Called to update the view.
