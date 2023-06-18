@@ -12,6 +12,7 @@ class MRIDocument(document.Document):
     _active_mri_id = None
     _needs_to_update_all = True
     _patients = None
+    _active_patient_id = None
 
 
     def clear(self):
@@ -19,12 +20,14 @@ class MRIDocument(document.Document):
         self._active_mri_id = None
         self._needs_to_update_all = True
         self._patients = None
+        self._active_patient_id = None
 
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
         self.clear()
         self._active_mri_id = None
         self._patients = nifti_mri.PatientCollection()
+        self._patients.loadFromDb()
         self._needs_to_update_all = True
         self.updateAllViews()
 
@@ -34,6 +37,20 @@ class MRIDocument(document.Document):
     def setNeedsToUpdateAll(self, value):
         self._needs_to_update_all = value
 
+    def getActiveCollection(self):
+        return self._patients
+
+    def setActivePatientID(self, patient_id):
+        if patient_id is not self._active_patient_id:
+            self._active_patient_id = patient_id
+            self._active_mri_id = None
+
+    def getActivePatient(self):
+        if not self._active_patient_id:
+            return None
+        else:
+            return self._patients.getPatient(self._active_patient_id)
+
     def getActiveMri(self):
         if self._active_mri_id:
             return self._patients.getMriByMriID(self._active_mri_id)
@@ -41,17 +58,19 @@ class MRIDocument(document.Document):
     def setActiveMri(self, mri_id, sender=None):
         self.checkToSave()
         self._active_mri_id = mri_id
+        mri =  self._patients.getMriByMriID(mri_id)
+        self._active_patient_id = mri.getPatientID()
         self.updateAllViews(sender)
 
-    def checkToSave(self):
+    def checkToSave(self, ask_to_save=True):
         mri = self.getActiveMri()
         if mri and mri.isDirty():
-            answer = askyesno(
-                title='MRI info was changed.',
-                message='Do you want to save your changes?'
-            )
-            if answer:
-                mri.saveToDb()
+            if ask_to_save:
+                if not askyesno(
+                        title='MRI info was changed.',
+                        message='Do you want to save your changes?'):
+                    return
+            mri.saveToDb()
 
     def isDirty(self):
         """Determine modification since it was last saved."""

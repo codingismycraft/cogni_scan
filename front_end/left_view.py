@@ -20,6 +20,10 @@ class LeftView(ttk.Treeview, view.View):
             # The user clicked on an MRI item.
             mri_id = tags[0]
             self.getDocument().setActiveMri(mri_id, self)
+        else:
+            self.getDocument().setActivePatientID(cur_item)
+            self.getDocument().updateAllViews(self)
+
 
     def update(self):
         """Called to update the view.

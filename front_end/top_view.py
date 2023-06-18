@@ -9,6 +9,7 @@ import tkinter.ttk as ttk
 import cogni_scan.front_end.cfc.view as view
 import cogni_scan.src.utils as cs
 
+
 class TopView(view.View):
 
     def __init__(self, parent_frame):
@@ -24,7 +25,8 @@ class TopView(view.View):
             widget.destroy()
 
     def saveChanges(self):
-        pass
+        self.getDocument().checkToSave(ask_to_save=False)
+        self.updateSaveButtonState()
 
     def updateSaveButtonState(self):
         if not self._save_button:
@@ -45,26 +47,74 @@ class TopView(view.View):
         self.updateSaveButtonState()
         self.getDocument().updateAllViews(self)
 
-    def _updateDescriptiveData(self):
-        """Paints screen with descriptive data."""
+    def changeOrienation(self, axis):
         mri = self.getDocument().getActiveMri()
         if not mri:
             return
-        canvas = Canvas(self.__parent_frame, width=600, height=60, bg='bisque')
-        canvas.pack(anchor=W)
+        mri.changeOrienation(axis)
+        self.updateSaveButtonState()
+        self.getDocument().updateAllViews(self)
 
-        l1 = tk.Label(canvas,  text="Patient ID")
-        l2 = tk.Label(canvas,  text="Days since first visit")
-        l3 = tk.Label(canvas,  text="Health Status")
+    def _updateCollectionData(self):
+        """Paints screen with descriptive data."""
+        activeCollection = self.getDocument().getActiveCollection()
+        if not activeCollection:
+            return
+        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+        canvas.pack(side="left", fill="both", expand=False, padx=10)
+        labels = []
+        values = []
+        for k, v in activeCollection.getDesctiptiveData().items():
+            labels.append(tk.Label(canvas, text=k))
+            values.append(tk.Label(canvas, text=str(v)))
+        for row, label in enumerate(labels):
+            label.grid(row=row, column=0, sticky=W)
+        for row, label in enumerate(values):
+            label.grid(row=row, column=1, sticky=W)
 
-        # l1.pack()
-        # l2.pack()
-        # l3.pack()
+    def _updatePatientData(self):
+        activePatient = self.getDocument().getActivePatient()
+        if not activePatient:
+            return
+        canvas = Canvas(self.__parent_frame, height=60, bg='red')
+        canvas.pack(side="left", fill="both", expand=False, padx=10)
+        labels = []
+        values = []
+        for k, v in activePatient.getDescriptiveData().items():
+            labels.append(tk.Label(canvas, text=k))
+            values.append(tk.Label(canvas, text=str(v)))
+        for row, label in enumerate(labels):
+            label.grid(row=row, column=0, sticky=W)
+        for row, label in enumerate(values):
+            label.grid(row=row, column=1, sticky=W)
 
-        l1.grid(row=0, column=0, sticky=W)
-        l2.grid(row=1, column=0, sticky=W)
-        l3.grid(row=2, column=0, sticky=W)
+    def _updateScanData(self):
+        mri = self.getDocument().getActiveMri()
+        if not mri:
+            return
 
+        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+        canvas.pack(side="left", fill="both", expand=False, padx=10)
+
+        self._save_button = Button(
+            canvas,
+            text="Save",
+            command=self.saveChanges)
+
+        self._save_button.grid(row=0, column=0)
+        self.updateSaveButtonState()
+
+        # Add the buttons to change the Axes.
+        for index, axis in enumerate(cs.getAxesOrientation()):
+            callback = functools.partial(self.changeAxis, axis)
+            button = Button(canvas, text=axis, command=callback)
+            button.grid(row=1, column= index)
+
+        # Add the buttons to rotate the slices if needed.
+        for index, axis in enumerate([0, 1, 2]):
+            callback = functools.partial(self.changeOrienation, axis)
+            button = Button(canvas, text="R", command=callback)
+            button.grid(row=2, column= index)
 
     def update(self):
         """Called to update the view.
@@ -74,52 +124,10 @@ class TopView(view.View):
         Needs to be implemented by the client code.
         """
         self.clear()
-        self._updateDescriptiveData()
-        return
+        self._updateCollectionData()
+        self._updatePatientData()
+        self._updateScanData()
 
-        mri = self.getDocument().getActiveMri()
-        if not mri:
-            return
-        l1 = tk.Label(self.__parent_frame,  text="Patient ID")
-        l2 = tk.Label(self.__parent_frame,  text="Days since first visit")
-        l3 = tk.Label(self.__parent_frame,  text="Health Status")
-
-
-        patient_id = StringVar()
-        patient_id.set(f"{mri.getPatientID()}")
-        e1 = tk.Entry(self.__parent_frame, state="readonly",textvariable=patient_id, width=15)
-
-        days = StringVar()
-        days.set(f"{mri.getDays()}")
-        e2 = tk.Entry(self.__parent_frame, state="readonly",textvariable=days, width=5)
-
-        health_status = StringVar()
-        health_status.set(f"{mri.getHealthStatus()}")
-        e3 = tk.Entry(self.__parent_frame, state="readonly",textvariable=health_status, width=15)
-
-        l1.grid(row=0, column=0,sticky=W, padx=8)
-        l2.grid(row=1, column=0,sticky=W, padx=8)
-        l3.grid(row=2, column=0,sticky=W, padx=8)
-
-        e1.grid(row=0, column=1,sticky=W, padx=8)
-        e2.grid(row=1, column=1,sticky=W, padx=8)
-        e3.grid(row=2, column=1,sticky=W, padx=8)
-
-        self._save_button = Button(
-            self.__parent_frame,
-            text="Save",
-            command=self.saveChanges)
-
-        self._save_button.grid(row=3, column=0)
-        self.updateSaveButtonState()
-
-        canvas = Canvas(self.__parent_frame, width=600, height=60, bg='bisque')
-        canvas.grid(row=4, column=0)
-
-        for axis in cs.getAxesOrientation():
-            callback = functools.partial(self.changeAxis, axis)
-            button = Button(canvas, text=axis, command=callback)
-            button.pack(pady=20, side=LEFT)
 
 if __name__ == '__main__':
     v = TopView(None)

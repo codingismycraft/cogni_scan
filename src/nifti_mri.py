@@ -21,7 +21,7 @@ select
     skipit, health_status, axis, rotation
 from
     scan
-order by patiend_id, days
+order by patiend_id, days, scan_id
 """
 
 _SQL_SELECT_EXIT_HEALTH_STATUS = """
@@ -54,11 +54,11 @@ class PatientCollection:
 
     def __init__(self):
         """Initialize the object with default values."""
-        self.__patients = None
-        self.__mri_id_to_mri = None
+        self.__patients = {}
+        self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-    def _loadFromDb(self):
+    def loadFromDb(self):
         """Load data from the database and populate the patient collection.
 
         Each row from the database is processed to create a new Scan object,
@@ -117,12 +117,36 @@ class PatientCollection:
         for i in range(count):
             yield patient.getScan(i)
 
+    def getDesctiptiveData(self):
+
+        hh_count = 0
+        hd_count = 0
+        total_scans = 0
+        for patient in self.__patients.values():
+            if patient.getLabel() == "HH":
+                hh_count += 1
+            elif patient.getLabel() == "HD":
+                hd_count += 1
+            total_scans += patient.numberOfScans()
+
+        return {
+            "Number of Patients": len(self.__patients),
+            "Number of HH Patients": hh_count,
+            "Number of HD Patients": hd_count,
+            "Total Number of Scans": total_scans,
+        }
+
     def getMriByMriID(self, mri_id):
         assert mri_id in self.__mri_id_to_mri
         return self.__mri_id_to_mri[mri_id]
 
     def getDesctiptiveDataForPatient(self, patient_id):
-        pass
+        if not self.__was_loaded:
+            self._loadFromDb()
+        assert self.__was_loaded
+        assert patient_id in self.__patients
+        patient = self.__patients[patient_id]
+        return patient.getDescriptiveData()
 
 
 class Patient:
@@ -147,6 +171,14 @@ class Patient:
         self.__scans = []
         self.__exit_health_status = '?'
 
+    def getDescriptiveData(self):
+        return {
+            "Patient ID": self.__patient_id,
+            "Health Status": self.getLabel(),
+            "Number Of Scans": self.numberOfScans(),
+            "Distinct Days": self.numberOfDistinctDays(),
+        }
+
     def addScan(self, scan):
         self.__scans.append(scan)
         self.__scans.sort(key=lambda x: x.getDays())
@@ -170,6 +202,12 @@ class Patient:
 
     def numberOfScans(self):
         return len(self.__scans)
+
+    def numberOfDistinctDays(self):
+        days = set()
+        for scan in self.__scans:
+            days.add(scan.getDays())
+        return len(days)
 
     def getScan(self, index):
         assert 0 <= index < len(self.__scans)
@@ -208,11 +246,11 @@ class Scan:
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
 
-    def getPatientDesc(self):
-        """Returns the descritive data for the patiend."""
-
     def getScanID(self):
         return self.__scan_id
+
+    def getPatientID(self):
+        return self.__patient_id
 
     def shouldBeSkiped(self):
         return self.__skipit
@@ -321,9 +359,10 @@ if __name__ == '__main__':
     #          print(p.getTitle())
 
     patient_id = 'OAS30326'
+    print(patients.getDesctiptiveDataForPatient(patient_id))
 
-    patient = patients.getPatient(patient_id)
-    print(patient.getLabel())
-
-    for x in patients.getMrisByPatient(patient_id):
-        print(x.getMriID())
+    # patient = patients.getPatient(patient_id)
+    # print(patient.getLabel())
+    #
+    # for x in patients.getMrisByPatient(patient_id):
+    #     print(x.getMriID())
