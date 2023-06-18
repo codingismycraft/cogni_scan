@@ -376,7 +376,7 @@ class Scan:
     def axis_mapping(self):
         return self.__axis_mapping.copy()
 
-    def get_slice(self, distance_from_center=0, axis=2):
+    def get_slice(self, distance_from_center=0, axis=2, bounding_square=400):
         if self.__img is None:
             self.__img = nib.load(self.__filepath).get_fdata()
         axis = self.__axis_mapping.get(axis)
@@ -395,12 +395,24 @@ class Scan:
         for _ in range(self.__rotation[axis]):
             img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-        return cv2.resize(
-            img,
-            dsize=(400, 400),
-            interpolation=cv2.INTER_CUBIC
-        )
-        return img
+        x, y = img.shape
+
+        if x > y:
+            ratio = y / x
+            x = bounding_square
+            y = bounding_square * ratio
+        elif x < y:
+            ratio = x / y
+            y = bounding_square
+            x = bounding_square * ratio
+        else:
+            x = y = bounding_square
+
+        x = int(x)
+        y = int(y)
+
+        resized = cv2.resize(img, dsize=(y, x), interpolation=cv2.INTER_CUBIC)
+        return resized
 
         # if axis in self.__size_trasnsformers:
         #     x, y = self.__size_trasnsformers[axis]
