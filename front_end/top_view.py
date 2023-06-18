@@ -7,6 +7,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 
 import cogni_scan.front_end.cfc.view as view
+import cogni_scan.front_end.settings as settings
 import cogni_scan.src.utils as cs
 
 
@@ -61,19 +62,13 @@ class TopView(view.View):
         activeCollection = self.getDocument().getActiveCollection()
         if not activeCollection:
             return
-
-        canvas = Canvas(self.__parent_frame,
-                        height=60, bg=self.__background_color)
-        canvas.pack(side="left", fill="both", expand=False, padx=10)
-
-        # Add the Hide Skipped Scans checkbox.
-        self._hide_skiped_var = tk.IntVar()
         doc = self.getDocument()
-        self._hide_skiped_var.set(doc.getHideSkipped())
-        skipit_checkbox = tk.Checkbutton(
-            canvas, text="Hide skipped",
-            variable=self._hide_skiped_var, command=self.refreshDisplay)
-        skipit_checkbox.grid(row=0, column=0)
+        canvas = Canvas(
+            self.__parent_frame,
+            height=60, bg=settings.TOP_BACKGROUND_COLOR,
+            highlightthickness=0
+        )
+        canvas.pack(side="left", fill="both", expand=False, padx=10)
 
         # Select the labels to display.
         self._current_health_label = tk.StringVar()
@@ -84,17 +79,35 @@ class TopView(view.View):
                     "DH", "DU", "DD", "UH", "UU", "UD"],
             textvariable=self._current_health_label
         )
-        labels_combo.grid(row=2, column=0)
+        labels_combo.grid(row=0, column=0, pady=8)
         labels_combo.bind('<<ComboboxSelected>>', self.refreshDisplay)
+
+        # Add the Hide Skipped Scans checkbox.
+        self._hide_skiped_var = tk.IntVar()
+        self._hide_skiped_var.set(doc.getHideSkipped())
+        skipit_checkbox = tk.Checkbutton(
+            canvas,
+            text="Hide skipped",
+            variable=self._hide_skiped_var,
+            command=self.refreshDisplay,
+            bg=settings.TOP_BACKGROUND_COLOR,
+            highlightthickness=0
+        )
+        skipit_checkbox.grid(row=1, column=0, pady=8)
 
         # Add a checkbox to only use healthy scans.
         self._show_healthy_only_var = tk.IntVar()
         doc = self.getDocument()
         self._show_healthy_only_var.set(doc.getShowOnlyHealthy())
         show_only_healthy_checkbox = tk.Checkbutton(
-            canvas, text="Show Only Healthy Scans",
-            variable=self._show_healthy_only_var, command=self.refreshDisplay)
-        show_only_healthy_checkbox.grid(row=3, column=0)
+            canvas,
+            text="Show Only Healthy Scans",
+            variable=self._show_healthy_only_var,
+            command=self.refreshDisplay,
+            bg=settings.TOP_BACKGROUND_COLOR,
+            highlightthickness=0
+        )
+        show_only_healthy_checkbox.grid(row=2, column=0, pady=8)
 
     def refreshDisplay(self, *args, **kwargs):
         hide_skipped = self._hide_skiped_var.get()
@@ -109,14 +122,20 @@ class TopView(view.View):
         activeCollection = self.getDocument().getActiveCollection()
         if not activeCollection:
             return
-        canvas = Canvas(self.__parent_frame, height=60,
-                        bg=self.__background_color)
-        canvas.pack(side="left", fill="both", expand=False, padx=10)
+        canvas = Canvas(self.__parent_frame, height=90,
+                        bg=settings.TOP_BACKGROUND_COLOR, highlightthickness=0)
+        canvas.pack(side="left", fill="both", expand=False, padx=10, pady=10)
+
         labels = []
         values = []
         for k, v in activeCollection.getDesctiptiveData().items():
-            labels.append(tk.Label(canvas, text=k))
-            values.append(tk.Label(canvas, text=str(v)))
+            labels.append(
+                tk.Label(canvas, text=k, bg=settings.LABEL_BACKGROUND_COLOR,
+                         fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10))
+            values.append(tk.Label(canvas, text=str(v),
+                                   bg=settings.LABEL_BACKGROUND_COLOR,
+                                   fg=settings.VALUE_FRONT_COLOR,
+                                   font=('Helvetica', 12, 'bold')))
         for row, label in enumerate(labels):
             label.grid(row=row, column=0, sticky=W)
         for row, label in enumerate(values):
@@ -126,14 +145,19 @@ class TopView(view.View):
         activePatient = self.getDocument().getActivePatient()
         if not activePatient:
             return
-        canvas = Canvas(self.__parent_frame, height=60,
-                        bg=self.__background_color)
-        canvas.pack(side="left", fill="both", expand=False, padx=10)
+        canvas = Canvas(self.__parent_frame, height=90,
+                        bg=settings.TOP_BACKGROUND_COLOR, highlightthickness=0)
+        canvas.pack(side="left", fill="both", expand=False, padx=10, pady=10)
         labels = []
         values = []
         for k, v in activePatient.getDescriptiveData().items():
-            labels.append(tk.Label(canvas, text=k))
-            values.append(tk.Label(canvas, text=str(v)))
+            labels.append(
+                tk.Label(canvas, text=k, bg=settings.LABEL_BACKGROUND_COLOR,
+                         fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10))
+            values.append(tk.Label(canvas, text=str(v),
+                                   bg=settings.LABEL_BACKGROUND_COLOR,
+                                   fg=settings.VALUE_FRONT_COLOR,
+                                   font=('Helvetica', 12, 'bold')))
         for row, label in enumerate(labels):
             label.grid(row=row, column=0, sticky=W)
         for row, label in enumerate(values):
@@ -145,7 +169,7 @@ class TopView(view.View):
             return
 
         canvas = Canvas(self.__parent_frame, height=60,
-                        bg=self.__background_color)
+                        bg=settings.TOP_BACKGROUND_COLOR)
         canvas.pack(side="left", fill="both", expand=False, padx=10)
 
         self._save_button = Button(
@@ -158,26 +182,29 @@ class TopView(view.View):
 
         # Add the buttons to change the Axes.
         column = 0
+        buttons = []
         for axis in cs.getAxesOrientation():
             callback = functools.partial(self.changeAxis, axis)
             button = Button(canvas, text=axis, command=callback)
-            button.grid(row=1, column=column)
+            buttons.append(button)
+
+        for b in buttons:
+            b.grid(row=1, column=column, pady=8)
             column += 1
 
         # Add the buttons to rotate the slices if needed.
-        for axis in [0, 1, 2]:
+        for column, axis in enumerate([0, 1, 2]):
             callback = functools.partial(self.changeOrienation, axis)
             button = Button(canvas, text="R", command=callback)
-            button.grid(row=1, column=column)
-            column += 1
+            button.grid(row=2, column=column, pady=8)
 
         # Add the skip-it or not.
         self._skipit_checkbox_var = tk.IntVar()
         self._skipit_checkbox_var.set(mri.shouldBeSkiped())
         skipit_checkbox = tk.Checkbutton(
-            canvas, text="Should Be Skipped",
+            canvas, text="Skip",
             variable=self._skipit_checkbox_var, command=self.changeSkipIt)
-        skipit_checkbox.grid(row=2, column=0)
+        skipit_checkbox.grid(row=3, column=0, pady=8)
 
     def changeSkipIt(self):
         mri = self.getDocument().getActiveMri()

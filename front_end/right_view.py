@@ -14,6 +14,7 @@ import tkinter.ttk as ttk
 
 import cogni_scan.src.utils as cs
 import cogni_scan.front_end.cfc.view as view
+import cogni_scan.front_end.settings as settings
 
 
 def saveSlicesToDisk(scan):
@@ -66,7 +67,7 @@ class RightView(view.View):
             self.__parent_frame,
             width=self.img_canvas_width,
             height=self.img_canvas_height,
-            bg='blue'
+            bg=settings.RIGHT_BACKGROUND_COLOR
         )
         self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
         self._image_canvas.place(x=20, y=20)

@@ -236,7 +236,10 @@ class Patient:
 
     def getLabel(self):
         exit_status = int2HealthStatus(self.__exit_health_status)
-        enter_status = int2HealthStatus(self.__scans[0].getHealthStatus())
+        try:
+            enter_status = int2HealthStatus(self.__scans[0].getHealthStatus())
+        except Exception as ex:
+            enter_status = '?'
         label = f'{enter_status}' \
                 f'{exit_status}'
         return label

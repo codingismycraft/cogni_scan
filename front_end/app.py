@@ -10,6 +10,7 @@ import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.left_view as left_view
 import cogni_scan.front_end.mri_doc as model
 import cogni_scan.front_end.right_view as right_view
+import cogni_scan.front_end.settings as settings
 import cogni_scan.front_end.top_view as top_view
 
 EVENT_EXIT = "EXIT"
@@ -108,7 +109,7 @@ class MainFrame(view.View):
         self.s.configure('TFrame', background='#7AC5CD')
 
         self.s1 = ttk.Style()
-        self.s1.configure('right.TFrame', background='#FAC5CD')
+        self.s1.configure('right.TFrame', background=settings.RIGHT_BACKGROUND_COLOR)
 
         self.s1 = ttk.Style()
         self.s1.configure('bottom.TFrame', background='#AAC5CD')
@@ -117,7 +118,7 @@ class MainFrame(view.View):
         self.s1.configure('bottom.TFrame', background='#AAC5CD')
 
         self.s1 = ttk.Style()
-        self.s1.configure('top.TFrame', background='#AAC5CD')
+        self.s1.configure('top.TFrame', background=settings.TOP_BACKGROUND_COLOR)
 
         # Adds the meny if needed.
         if menu:
@@ -189,4 +190,4 @@ class MainFrame(view.View):
 
 if __name__ == '__main__':
     mf = MainFrame()
-    mf.main("sample", MENU)
+    mf.main(settings.APP_NAME, MENU)
