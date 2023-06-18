@@ -49,6 +49,7 @@ from
 where scan_id={scan_id}
 """.format
 
+
 def int2HealthStatus(value):
     if value == 0:
         return "H"
@@ -76,7 +77,8 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-    def loadFromDb(self, hide_skipped=False):
+    def loadFromDb(self, hide_skipped=False, show_labels="ALL",
+                   show_only_healthy=False):
         """Load data from the database and populate the patient collection.
 
         Each row from the database is processed to create a new Scan object,
@@ -111,11 +113,23 @@ class PatientCollection:
             if patient_id in self.__patients:
                 self.__patients[patient_id].setExitHealthStatus(health_status)
 
+        if show_labels != "ALL":
+            labels = show_labels.split("-")
+            temp = {}
+            for k, v in self.__patients.items():
+                if v.getLabel() in labels:
+                    temp[k] = v
+            self.__patients = temp
+
+        if show_only_healthy:
+            for _, v in self.__patients.items():
+                v.keepOnlyHealthyScans()
+
         self.__was_loaded = True
 
     def getPatient(self, patiend_id):
         if not self.__was_loaded:
-            self._loadFromDb()
+            self.loadFromDb()
         assert self.__was_loaded
         if patiend_id in self.__patients:
             return self.__patients[patiend_id]
@@ -125,14 +139,14 @@ class PatientCollection:
     def getPatientIDs(self):
         """Yields patient IDs from the patient collection."""
         if not self.__was_loaded:
-            self._loadFromDb()
+            self.loadFromDb()
         assert self.__was_loaded
         for patiend_id, patient in self.__patients.items():
             yield patiend_id, patient.getTitle()
 
     def getMrisByPatient(self, patient_id):
         if not self.__was_loaded:
-            self._loadFromDb()
+            self.loadFromDb()
         assert self.__was_loaded
         assert patient_id in self.__patients
         patient = self.__patients[patient_id]
@@ -165,7 +179,7 @@ class PatientCollection:
 
     def getDesctiptiveDataForPatient(self, patient_id):
         if not self.__was_loaded:
-            self._loadFromDb()
+            self.loadFromDb()
         assert self.__was_loaded
         assert patient_id in self.__patients
         patient = self.__patients[patient_id]
@@ -201,6 +215,10 @@ class Patient:
             "Number Of Scans": self.numberOfScans(),
             "Distinct Days": self.numberOfDistinctDays(),
         }
+
+    def keepOnlyHealthyScans(self):
+        self.__scans = [
+            scan for scan in self.__scans if scan.getHealthStatus() == 0]
 
     def addScan(self, scan):
         self.__scans.append(scan)
@@ -254,7 +272,6 @@ class Scan:
         self.__img = None
         self.__is_dirty = False
 
-
     def __repr__(self):
         return f'NiftiMri({self.__filepath})'
 
@@ -266,7 +283,6 @@ class Scan:
         sql = _SQL_SELECT_ONE(scan_id=self.__scan_id)
         for row in dbutil.execute_query(sql):
             self.__init__(*row)
-
 
     def saveToDb(self):
         axis = json.dumps(self.__axis_mapping)

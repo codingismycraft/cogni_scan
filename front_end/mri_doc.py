@@ -14,6 +14,8 @@ class MRIDocument(document.Document):
     _patients = None
     _active_patient_id = None
     _hide_skipped = 0
+    _show_only_healthy = False
+    _show_labels = "ALL"
 
 
     def clear(self):
@@ -26,6 +28,12 @@ class MRIDocument(document.Document):
     def getHideSkipped(self):
         return self._hide_skipped
 
+    def getShowOnlyHealthy(self):
+        return self._show_only_healthy
+
+    def getLabelsToShow(self):
+        return self._show_labels
+
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
         hide_skipped = False
@@ -33,11 +41,24 @@ class MRIDocument(document.Document):
             hide_skipped = kwargs.get('hide_skipped')
             assert hide_skipped in (0, 1)
             hide_skipped = bool(hide_skipped)
+
+        show_labels = "ALL"
+        if 'show_labels' in kwargs:
+            show_labels = kwargs.get('show_labels')
+
+        show_only_healthy = False
+        if 'show_only_healthy' in kwargs:
+            show_only_healthy = kwargs.get('show_only_healthy')
+            assert show_only_healthy in (0, 1)
+            show_only_healthy = bool(show_only_healthy)
+
         self.clear()
         self._active_mri_id = None
         self._patients = nifti_mri.PatientCollection()
-        self._patients.loadFromDb(hide_skipped)
+        self._patients.loadFromDb(hide_skipped, show_labels, show_only_healthy)
         self._hide_skipped = 1 if hide_skipped else 0
+        self._show_only_healthy = 1 if show_only_healthy else 0
+        self._show_labels = show_labels
         self._needs_to_update_all = True
         self.updateAllViews()
 

@@ -14,6 +14,7 @@ class TopView(view.View):
 
     def __init__(self, parent_frame):
         self.__parent_frame = parent_frame
+        self.__background_color = "bisque"
 
     def clear(self):
         """Removes only the images from the frame.
@@ -60,29 +61,56 @@ class TopView(view.View):
         activeCollection = self.getDocument().getActiveCollection()
         if not activeCollection:
             return
-        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+
+        canvas = Canvas(self.__parent_frame,
+                        height=60, bg=self.__background_color)
         canvas.pack(side="left", fill="both", expand=False, padx=10)
 
+        # Add the Hide Skipped Scans checkbox.
         self._hide_skiped_var = tk.IntVar()
         doc = self.getDocument()
         self._hide_skiped_var.set(doc.getHideSkipped())
         skipit_checkbox = tk.Checkbutton(
             canvas, text="Hide skipped",
-            variable=self._hide_skiped_var, command=self.hideSkipped)
+            variable=self._hide_skiped_var, command=self.refreshDisplay)
         skipit_checkbox.grid(row=0, column=0)
 
-    def hideSkipped(self):
-        value = self._hide_skiped_var.get()
+        # Select the labels to display.
+        self._current_health_label = tk.StringVar()
+        self._current_health_label.set(doc.getLabelsToShow())
+        labels_combo = ttk.Combobox(
+            canvas,
+            values=["ALL", "HH-HD", "HH-HD-HU", "HH", "HD", "HU",
+                    "DH", "DU", "DD", "UH", "UU", "UD"],
+            textvariable=self._current_health_label
+        )
+        labels_combo.grid(row=2, column=0)
+        labels_combo.bind('<<ComboboxSelected>>', self.refreshDisplay)
+
+        # Add a checkbox to only use healthy scans.
+        self._show_healthy_only_var = tk.IntVar()
         doc = self.getDocument()
-        doc.load(hide_skipped=value)
-        print("dont know how to do it", value)
+        self._show_healthy_only_var.set(doc.getShowOnlyHealthy())
+        show_only_healthy_checkbox = tk.Checkbutton(
+            canvas, text="Show Only Healthy Scans",
+            variable=self._show_healthy_only_var, command=self.refreshDisplay)
+        show_only_healthy_checkbox.grid(row=3, column=0)
+
+    def refreshDisplay(self, *args, **kwargs):
+        hide_skipped = self._hide_skiped_var.get()
+        labels = self._current_health_label.get()
+        show_only_healthy = self._show_healthy_only_var.get()
+        doc = self.getDocument()
+        doc.load(hide_skipped=hide_skipped, show_labels=labels,
+                 show_only_healthy=show_only_healthy)
 
     def _updateCollectionData(self):
         """Paints screen with descriptive data."""
         activeCollection = self.getDocument().getActiveCollection()
         if not activeCollection:
             return
-        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+        canvas = Canvas(self.__parent_frame, height=60,
+                        bg=self.__background_color)
         canvas.pack(side="left", fill="both", expand=False, padx=10)
         labels = []
         values = []
@@ -98,7 +126,8 @@ class TopView(view.View):
         activePatient = self.getDocument().getActivePatient()
         if not activePatient:
             return
-        canvas = Canvas(self.__parent_frame, height=60, bg='red')
+        canvas = Canvas(self.__parent_frame, height=60,
+                        bg=self.__background_color)
         canvas.pack(side="left", fill="both", expand=False, padx=10)
         labels = []
         values = []
@@ -115,7 +144,8 @@ class TopView(view.View):
         if not mri:
             return
 
-        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+        canvas = Canvas(self.__parent_frame, height=60,
+                        bg=self.__background_color)
         canvas.pack(side="left", fill="both", expand=False, padx=10)
 
         self._save_button = Button(
