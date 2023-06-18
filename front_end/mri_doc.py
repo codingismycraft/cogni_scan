@@ -13,6 +13,7 @@ class MRIDocument(document.Document):
     _needs_to_update_all = True
     _patients = None
     _active_patient_id = None
+    _hide_skipped = 0
 
 
     def clear(self):
@@ -22,12 +23,21 @@ class MRIDocument(document.Document):
         self._patients = None
         self._active_patient_id = None
 
+    def getHideSkipped(self):
+        return self._hide_skipped
+
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
+        hide_skipped = False
+        if 'hide_skipped' in kwargs:
+            hide_skipped = kwargs.get('hide_skipped')
+            assert hide_skipped in (0, 1)
+            hide_skipped = bool(hide_skipped)
         self.clear()
         self._active_mri_id = None
         self._patients = nifti_mri.PatientCollection()
-        self._patients.loadFromDb()
+        self._patients.loadFromDb(hide_skipped)
+        self._hide_skipped = 1 if hide_skipped else 0
         self._needs_to_update_all = True
         self.updateAllViews()
 

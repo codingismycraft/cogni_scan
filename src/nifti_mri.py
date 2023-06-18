@@ -24,6 +24,16 @@ from
 order by patiend_id, days, scan_id
 """
 
+_SQL_SELECT_NON_SKIPPED = """
+select
+    scan_id, fullpath, days, patiend_id, origin,
+    skipit, health_status, axis, rotation
+from
+    scan
+where skipit=0
+order by patiend_id, days, scan_id
+"""
+
 _SQL_SELECT_EXIT_HEALTH_STATUS = """
 select a.patient_id, a.health_status from diagnosis a, 
 (Select patient_id, max(days) as days from diagnosis group by patient_id) b  
@@ -66,7 +76,7 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-    def loadFromDb(self):
+    def loadFromDb(self, hide_skipped=False):
         """Load data from the database and populate the patient collection.
 
         Each row from the database is processed to create a new Scan object,
@@ -77,7 +87,12 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-        for row in dbutil.execute_query(_SQL_SELECT_ALL):
+        if hide_skipped:
+            sql = _SQL_SELECT_NON_SKIPPED
+        else:
+            sql = _SQL_SELECT_ALL
+
+        for row in dbutil.execute_query(sql):
             (scan_id, fullpath, days, patient_id, origin,
              skipit, health_status, axis, rotation) = row
 

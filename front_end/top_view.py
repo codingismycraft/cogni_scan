@@ -55,6 +55,28 @@ class TopView(view.View):
         self.updateSaveButtonState()
         self.getDocument().updateAllViews(self)
 
+    def _updateFiltering(self):
+        """Updates the filters applied to the collection of Mri objects."""
+        activeCollection = self.getDocument().getActiveCollection()
+        if not activeCollection:
+            return
+        canvas = Canvas(self.__parent_frame, height=60, bg='bisque')
+        canvas.pack(side="left", fill="both", expand=False, padx=10)
+
+        self._hide_skiped_var = tk.IntVar()
+        doc = self.getDocument()
+        self._hide_skiped_var.set(doc.getHideSkipped())
+        skipit_checkbox = tk.Checkbutton(
+            canvas, text="Hide skipped",
+            variable=self._hide_skiped_var, command=self.hideSkipped)
+        skipit_checkbox.grid(row=0, column=0)
+
+    def hideSkipped(self):
+        value = self._hide_skiped_var.get()
+        doc = self.getDocument()
+        doc.load(hide_skipped=value)
+        print("dont know how to do it", value)
+
     def _updateCollectionData(self):
         """Paints screen with descriptive data."""
         activeCollection = self.getDocument().getActiveCollection()
@@ -142,6 +164,7 @@ class TopView(view.View):
         Needs to be implemented by the client code.
         """
         self.clear()
+        self._updateFiltering()
         self._updateCollectionData()
         self._updatePatientData()
         self._updateScanData()
