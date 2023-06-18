@@ -13,7 +13,7 @@ class MRIDocument(document.Document):
     _needs_to_update_all = True
     _patients = None
     _active_patient_id = None
-    _hide_skipped = 0
+    _hide_skipped = 1
     _show_only_healthy = False
     _show_labels = "ALL"
 
@@ -36,7 +36,7 @@ class MRIDocument(document.Document):
 
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
-        hide_skipped = False
+        hide_skipped = True
         if 'hide_skipped' in kwargs:
             hide_skipped = kwargs.get('hide_skipped')
             assert hide_skipped in (0, 1)

@@ -105,7 +105,7 @@ class MainFrame(view.View):
             menubar.add_cascade(label=main_option, menu=menu)
         return menubar
 
-    def main(self, title="n/a", menu=None, width=1200, height=700, upperX=200,
+    def main(self, title="n/a", menu=None, width=1600, height=800, upperX=200,
              upperY=100, zoomed=False):
         self._document = MRIDocument()
         self._root = tk.Tk()
@@ -169,8 +169,8 @@ class MainFrame(view.View):
         # Adds the right frame.
         right_frame = ttk.Frame(
             panedwindow,
-            width=400,
-            height=400,
+            width=1230,
+            height=520,
             relief=tk.SUNKEN,
             style='right.TFrame',
         )

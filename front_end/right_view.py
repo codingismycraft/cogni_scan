@@ -60,8 +60,8 @@ class RightView(view.View):
         if not mri:
             return
         # Add the canvas where the slices are drawn.
-        self.img_canvas_width = 800
-        self.img_canvas_height = 400
+        self.img_canvas_width = 1250
+        self.img_canvas_height = 700
 
         self._image_canvas = Canvas(
             self.__parent_frame,
@@ -70,8 +70,8 @@ class RightView(view.View):
             bg=settings.RIGHT_BACKGROUND_COLOR,
             highlightthickness = 0
         )
-        self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM)
-        self._image_canvas.place(x=20, y=20)
+        self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM, pady=18)
+        self._image_canvas.place(x=20, y=10)
         #tk.Misc.lift(canvas)
         self.update_scan(mri)
 
@@ -81,7 +81,7 @@ class RightView(view.View):
             for file in saveSlicesToDisk(mri)
         ]
 
-        x, y = 0, 130
+        x, y = 0, 230
         n = len(self.imgs)
         for img in self.imgs:
             self._image_canvas.create_image(x, y, anchor=W, image=img)

@@ -395,6 +395,11 @@ class Scan:
         for _ in range(self.__rotation[axis]):
             img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
+        return cv2.resize(
+            img,
+            dsize=(400, 400),
+            interpolation=cv2.INTER_CUBIC
+        )
         return img
 
         # if axis in self.__size_trasnsformers:
