@@ -116,17 +116,19 @@ class PatientCollection:
             if patient_id in self.__patients:
                 self.__patients[patient_id].setExitHealthStatus(health_status)
 
+        if show_only_healthy:
+            for _, v in self.__patients.items():
+                v.keepOnlyHealthyScans()
+
         if show_labels != "ALL":
             labels = show_labels.split("-")
             temp = {}
             for k, v in self.__patients.items():
+                l = v.getLabel()
                 if v.getLabel() in labels:
                     temp[k] = v
             self.__patients = temp
 
-        if show_only_healthy:
-            for _, v in self.__patients.items():
-                v.keepOnlyHealthyScans()
 
         self.__was_loaded = True
 
