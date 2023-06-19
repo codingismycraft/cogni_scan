@@ -40,15 +40,18 @@ CREATE TABLE scan_features
 (
     feature_id       SERIAL PRIMARY KEY,
     scan_id          INTEGER,
+    distance_0 FLOAT,
+    distance_1 FLOAT,
+    distance_2 FLOAT,
+    features_slice01 jsonb,
+    features_slice02 jsonb,
+    features_slice03 jsonb,
     features_slice11 jsonb,
     features_slice12 jsonb,
     features_slice13 jsonb,
     features_slice21 jsonb,
     features_slice22 jsonb,
     features_slice23 jsonb,
-    features_slice31 jsonb,
-    features_slice32 jsonb,
-    features_slice33 jsonb,
     UNIQUE (scan_id)
 );
 

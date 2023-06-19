@@ -3,12 +3,36 @@
 import copy
 import json
 import os.path
+import pickle
 
 import cv2
 import nibabel as nib
 import numpy as np
 
 import cogni_scan.src.dbutil as dbutil
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow import keras
+
+
+class _FeatureExtractor:
+    _ready = False
+
+    def __call__(self, image):
+        if not self._ready:
+            self.__model_1 = VGG16(
+                weights='imagenet', include_top=False, input_shape=(200, 200, 3)
+            )
+            self._ready = True
+
+        features = self.__model_1.predict(np.array([image]))
+        gavg = keras.layers.GlobalAveragePooling2D()(features)
+        return keras.layers.Flatten()(gavg)
+
+
+_feature_extractor = _FeatureExtractor()
 
 _SQL_UPDATE_ONE = """
     Update
@@ -17,6 +41,20 @@ _SQL_UPDATE_ONE = """
     where
         fullpath='{fullpath}'
 """.format
+
+
+def add_rgb_channels(imgs):
+    """Adds the RGB channels to a collection of gray scale images.
+
+    :param imgs: A numpy array holding a collection of gray scale images.
+    :return: A numpy array holding RGB images.
+    """
+    if len(imgs) == 0:
+        return imgs
+
+    rgb = np.repeat(imgs, 3)
+    return rgb.reshape(imgs.shape + (3,))
+
 
 _SQL_SELECT_ALL = """
 select
@@ -51,6 +89,27 @@ from
     scan
 where scan_id={scan_id}
 """.format
+
+_SQL_INSERT_FEATURES = """
+INSERT INTO scan_features (
+    scan_id,
+    distance_0,
+    distance_1,
+    distance_2,
+    features_slice01,
+    features_slice02,
+    features_slice03,
+    features_slice11,
+    features_slice12,
+    features_slice13,
+    features_slice21,
+    features_slice22,
+    features_slice23
+)
+VALUES (
+   {}, {}, {}, {}, '{}','{}','{}','{}','{}','{}','{}','{}','{}'
+)
+"""
 
 
 def int2HealthStatus(value):
@@ -129,7 +188,6 @@ class PatientCollection:
                     temp[k] = v
             self.__patients = temp
 
-
         self.__was_loaded = True
 
     def saveLabelsToDb(self):
@@ -207,6 +265,11 @@ class PatientCollection:
             count += v.numberOfDistinctDays()
         return count
 
+    def saveVGG16Features(self):
+        for k, v in self.__patients.items():
+            v.saveVGG16Features()
+
+
 class Patient:
     """Holds the information about a patient.
 
@@ -277,6 +340,10 @@ class Patient:
     def getScan(self, index):
         assert 0 <= index < len(self.__scans)
         return self.__scans[index]
+
+    def saveVGG16Features(self):
+        for scan in self.__scans:
+            scan.saveVGG16Features()
 
 
 class Scan:
@@ -456,6 +523,30 @@ class Scan:
         l_img[y_offset:y_offset + s_img.shape[0],
         x_offset:x_offset + s_img.shape[1]] = s_img
         return l_img
+
+    def saveVGG16Features(self):
+        # https://stackoverflow.com/questions/60278766/best-way-to-insert-python-numpy-array-into-postgresql-database
+        print(self.__scan_id)
+        scan_id = self.__scan_id
+        d0, d1, d2 = self.__slice_distances
+        features = []
+        for axis in [0, 1, 2]:
+            dist = self.__slice_distances[axis]
+            for d in [-dist, 0, dist]:
+                slice = self.get_slice(
+                    distance_from_center=d, axis=axis, bounding_square=200
+                )
+                img = add_rgb_channels(slice)
+                a = np.array(_feature_extractor(img))
+                jsn = json.dumps(a.tolist())
+                features.append(jsn)
+
+        sql = _SQL_INSERT_FEATURES.format(
+            scan_id, d0, d1, d2, *features
+        )
+
+        print("Inserting to the database: ", self.__scan_id)
+        dbutil.execute_non_query(sql)
 
 
 if __name__ == '__main__':

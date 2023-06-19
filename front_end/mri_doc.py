@@ -38,6 +38,9 @@ class MRIDocument(document.Document):
         if self._patients:
             self._patients.saveLabelsToDb()
 
+    def saveVGG16Features(self):
+        if self._patients:
+            self._patients.saveVGG16Features()
 
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""

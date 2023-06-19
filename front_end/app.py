@@ -18,6 +18,7 @@ EVENT_UPDATE_LABELS = "UPDATE_LABELS"
 EVENT_FILTER = "FILTER"
 SEPARATOR = "Separator"
 EVENT_ABOUT = "About"
+EVENT_SAVE_VGG16_FEATURES = "SAVE_VGG16_FEATURES"
 
 MENU = {
     "File": [
@@ -25,6 +26,7 @@ MENU = {
     ],
     "Options": [
         ("Update Patient Labels", EVENT_UPDATE_LABELS),
+        ("Save VGG16 Features", EVENT_SAVE_VGG16_FEATURES),
         ("Filter", EVENT_FILTER),
         (SEPARATOR, None),
         ("Filter", EVENT_FILTER),
@@ -87,6 +89,8 @@ class MainFrame(view.View):
             d = AboutDialog(self._root)
         elif event == EVENT_UPDATE_LABELS:
             mri = self.getDocument().saveLabelsToDb()
+        elif event == EVENT_SAVE_VGG16_FEATURES:
+            self.getDocument().saveVGG16Features()
 
     def update(self):
         active_path = "No selection."
