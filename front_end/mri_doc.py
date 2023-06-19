@@ -17,8 +17,6 @@ class MRIDocument(document.Document):
     _show_only_healthy = False
     _show_labels = "ALL"
     _slice_square_length = 400
-    _slice_distances = 0.2, 0.2 , 0.2
-
 
     def clear(self):
         """Delete the document's data without destroying the object."""
@@ -26,12 +24,6 @@ class MRIDocument(document.Document):
         self._needs_to_update_all = True
         self._patients = None
         self._active_patient_id = None
-
-    def getSliceDistances(self):
-        return self._slice_distances
-
-    def setSliceDistances(self, d0, d1, d2):
-        self._slice_distances = float(d0), float(d1), float(d2)
 
     def getHideSkipped(self):
         return self._hide_skipped
@@ -86,16 +78,16 @@ class MRIDocument(document.Document):
 
     def makeSliceLarger(self):
         x = self._slice_square_length
-        if x >=500:
+        if x >= 500:
             return
-        x += x *0.1
+        x += x * 0.1
         self._slice_square_length = int(x)
 
     def makeSliceSmaller(self):
         x = self._slice_square_length
-        if x <=100:
+        if x <= 100:
             return
-        x -= x *0.1
+        x -= x * 0.1
         self._slice_square_length = int(x)
 
     def getSliceSquareLength(self):
@@ -114,7 +106,7 @@ class MRIDocument(document.Document):
     def setActiveMri(self, mri_id, sender=None):
         self.checkToSave()
         self._active_mri_id = mri_id
-        mri =  self._patients.getMriByMriID(mri_id)
+        mri = self._patients.getMriByMriID(mri_id)
         self._active_patient_id = mri.getPatientID()
         self.updateAllViews(sender)
 

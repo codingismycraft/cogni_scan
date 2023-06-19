@@ -1,5 +1,6 @@
 """Exposes the MRIs as a collection of objects."""
 
+import copy
 import json
 import os.path
 
@@ -10,7 +11,8 @@ import cogni_scan.src.dbutil as dbutil
 
 _SQL_UPDATE_ONE = """
     Update
-        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}'
+        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}',
+        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}
     where
         fullpath='{fullpath}'
 """.format
@@ -18,7 +20,7 @@ _SQL_UPDATE_ONE = """
 _SQL_SELECT_ALL = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation
+    skipit, health_status, axis, rotation, sd0, sd1, sd2
 from
     scan
 order by patiend_id, days, scan_id
@@ -27,7 +29,7 @@ order by patiend_id, days, scan_id
 _SQL_SELECT_NON_SKIPPED = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation
+    skipit, health_status, axis, rotation, sd0, sd1, sd2
 from
     scan
 where skipit=0
@@ -43,7 +45,7 @@ where a.patient_id = b.patient_id and a.days = b.days;
 _SQL_SELECT_ONE = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation
+    skipit, health_status, axis, rotation, sd0, sd1, sd2
 from
     scan
 where scan_id={scan_id}
@@ -96,13 +98,13 @@ class PatientCollection:
 
         for row in dbutil.execute_query(sql):
             (scan_id, fullpath, days, patient_id, origin,
-             skipit, health_status, axis, rotation) = row
+             skipit, health_status, axis, rotation, sd0, sd1, sd2) = row
 
             if patient_id not in self.__patients:
                 self.__patients[patient_id] = Patient(patient_id)
 
             scan = Scan(scan_id, fullpath, days, patient_id, origin, skipit,
-                        health_status, axis, rotation)
+                        health_status, axis, rotation, sd0, sd1, sd2)
 
             self.__patients[patient_id].addScan(scan)
             self.__mri_id_to_mri[scan.getScanID()] = scan
@@ -261,7 +263,7 @@ class Patient:
 class Scan:
 
     def __init__(self, scan_id, fullpath, days, patient_id,
-                 origin, skipit, health_status, axis, rotation):
+                 origin, skipit, health_status, axis, rotation, sd0, sd1, sd2):
         self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
@@ -273,6 +275,7 @@ class Scan:
         self.__axis_mapping = {int(k): v for k, v in axis.items()}
         self.__rotation = rotation
         self.__img = None
+        self.__slice_distances = [sd0, sd1, sd2]
         self.__is_dirty = False
 
     def __repr__(self):
@@ -288,13 +291,17 @@ class Scan:
             self.__init__(*row)
 
     def saveToDb(self):
+        sd0, sd1, sd2 = self.__slice_distances
         axis = json.dumps(self.__axis_mapping)
         rotation = json.dumps(self.__rotation)
         sql = _SQL_UPDATE_ONE(
             skipit=self.__skipit,
             axis=axis,
             rotation=rotation,
-            fullpath=self.__filepath
+            fullpath=self.__filepath,
+            sd0=sd0,
+            sd1=sd1,
+            sd2=sd2
         )
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
@@ -304,6 +311,17 @@ class Scan:
 
     def getPatientID(self):
         return self.__patient_id
+
+    def getSliceDistances(self):
+        return copy.deepcopy(self.__slice_distances)
+
+    def setSliceDistance(self, index, slice_distance):
+        assert 0 <= index <= 2
+        assert 0. <= slice_distance < 1.0
+        if self.__slice_distances[index] == slice_distance:
+            return
+        self.__slice_distances[index] = slice_distance
+        self.__is_dirty = True
 
     def shouldBeSkiped(self):
         return self.__skipit

@@ -10,8 +10,13 @@ CREATE TABLE scan
     health_status int default 0,  -- 0: healthy, 1: Mild 2: Demented
     axis jsonb NOT NULL,
     rotation jsonb NOT NULL,
+    sd0 FLOAT default 0.2, -- Slice Distance for first axis.
+    sd1 FLOAT default 0.2, -- Slice Distance for middle axis.
+    sd2 FLOAT default 0.2, -- Slice Distance for third axis.
     UNIQUE(fullpath)
 );
+
+-- update scan set skipit=1 where fullpath like ('%TSE%');
 
 
 CREATE TABLE diagnosis

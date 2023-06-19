@@ -17,7 +17,6 @@ import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
 
 
-
 class RightView(view.View):
 
     def __init__(self, parent_frame):
@@ -57,7 +56,7 @@ class RightView(view.View):
         for i in range(3):
             if i == 0:
                 color = "red"
-            if i ==1:
+            if i == 1:
                 color = "green"
             if i == 2:
                 color = "blue"
@@ -67,22 +66,21 @@ class RightView(view.View):
                 width=self.img_canvas_width,
                 height=self.img_canvas_height,
                 bg=settings.RIGHT_BACKGROUND_COLOR,
-                highlightthickness = 0
+                highlightthickness=0
             )
             canvases.append(c)
 
         for i, c in enumerate(canvases):
             c.grid(row=i, column=0)
 
-
         index = 0
         for canvas in canvases:
             self.update_scan(mri, canvas, index)
             index += 1
 
-        #tk.Misc.lift(canvas)
+        # tk.Misc.lift(canvas)
 
-    def update_scan(self, mri,canvas, index):
+    def update_scan(self, mri, canvas, index):
         imgs = [
             ImageTk.PhotoImage(PIL.Image.open(file))
             for file in self.saveSlicesToDisk(mri, index)
@@ -97,20 +95,19 @@ class RightView(view.View):
     def saveSlicesToDisk(self, scan, index):
         """Saves the slices for the passed in scan to disk."""
         doc = self.getDocument()
-        base_dir = tempfile.gettempdir()
-        filenames = []
-
-        distances = doc.getSliceDistances()
+        mri = doc.getActiveMri()
 
         if index == 0:
-            distances = doc.getSliceDistances()
+            distances = mri.getSliceDistances()
             distances = [-x for x in distances]
         elif index == 1:
             distances = 0, 0, 0
         elif index == 2:
-            distances = doc.getSliceDistances()
+            distances = mri.getSliceDistances()
             distances = [x for x in distances]
 
+        filenames = []
+        base_dir = tempfile.gettempdir()
 
         for axis in [0, 1, 2]:
             filename = f"slice_{axis}_{index}.jpg"
@@ -123,7 +120,6 @@ class RightView(view.View):
             )
             cv2.imwrite(filename, img)
         return filenames
-
 
 
 if __name__ == '__main__':
