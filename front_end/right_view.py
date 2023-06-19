@@ -49,48 +49,69 @@ class RightView(view.View):
         if not mri:
             return
         # Add the canvas where the slices are drawn.
+        self.imgs = []
         self.img_canvas_width = 1250
-        self.img_canvas_height = 700
+        self.img_canvas_height = 400
 
-        self._image_canvas = Canvas(
-            self.__parent_frame,
-            width=self.img_canvas_width,
-            height=self.img_canvas_height,
-            bg=settings.RIGHT_BACKGROUND_COLOR,
-            highlightthickness = 0
-        )
-        self._image_canvas.pack(fill=BOTH, expand=YES, side=BOTTOM, pady=18)
-        self._image_canvas.place(x=20, y=10)
+        canvases = []
+        for i in range(3):
+            if i == 0:
+                color = "red"
+            if i ==1:
+                color = "green"
+            if i == 2:
+                color = "blue"
+
+            c = Canvas(
+                self.__parent_frame,
+                width=self.img_canvas_width,
+                height=self.img_canvas_height,
+                bg=settings.RIGHT_BACKGROUND_COLOR,
+                highlightthickness = 0
+            )
+            canvases.append(c)
+
+        for i, c in enumerate(canvases):
+            c.grid(row=i, column=0)
+
+        slice_distances = -0.8, 0, -0.8
+
+        index = 0
+        for d,c in zip(slice_distances, canvases):
+            self.update_scan(mri, d, c, index)
+            index += 1
+
         #tk.Misc.lift(canvas)
-        self.update_scan(mri)
 
-    def saveSlicesToDisk(self, scan):
+    def update_scan(self, mri,d, c, index):
+        imgs = [
+            ImageTk.PhotoImage(PIL.Image.open(file))
+            for file in self.saveSlicesToDisk(mri, d, index)
+        ]
+        x, y = 0, 230
+        n = len(imgs)
+        for img in imgs:
+            c.create_image(x, y, anchor=W, image=img)
+            x += self.img_canvas_width / n
+        self.imgs.extend(imgs)
+
+    def saveSlicesToDisk(self, scan, d, index):
         """Saves the slices for the passed in scan to disk."""
         doc = self.getDocument()
         base_dir = tempfile.gettempdir()
         filenames = []
         for axis in [0, 1, 2]:
-            filename = f"slice_{axis}.jpg"
+            filename = f"slice_{axis}_{index}.jpg"
             filename = os.path.join(base_dir, filename)
             filenames.append(filename)
             img = scan.get_slice(
+                distance_from_center=d,
                 axis=axis,
-                bounding_square=doc.getSliceSquareLength()
+                bounding_square=doc.getSliceSquareLength(),
             )
             cv2.imwrite(filename, img)
         return filenames
 
-    def update_scan(self, mri):
-        self.imgs = [
-            ImageTk.PhotoImage(PIL.Image.open(file))
-            for file in self.saveSlicesToDisk(mri)
-        ]
-
-        x, y = 0, 230
-        n = len(self.imgs)
-        for img in self.imgs:
-            self._image_canvas.create_image(x, y, anchor=W, image=img)
-            x += self.img_canvas_width / n
 
 
 if __name__ == '__main__':

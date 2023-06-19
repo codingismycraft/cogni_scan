@@ -213,6 +213,30 @@ class TopView(view.View):
             variable=self._skipit_checkbox_var, command=self.changeSkipIt)
         skipit_checkbox.grid(row=3, column=0, pady=8)
 
+        # Select the distances of the secondary slices.
+        self._slice_dist_labels = []
+
+        for i in range(3):
+            label = tk.StringVar()
+            label.set("0.4")
+            self._slice_dist_labels.append(label)
+            dist_combo = ttk.Combobox(
+                canvas,
+                values=[f'0.{i}' for i in range(1,10)],
+                textvariable=label,
+                width=3
+            )
+            dist_combo.grid(row=3, column=1+i, pady=8)
+            dist_combo.bind('<<ComboboxSelected>>', self.changeSliceDistance)
+
+    def changeSliceDistance(self, *args, **kwargs):
+        distances = []
+        for v in self._slice_dist_labels:
+            distances.append(v.get())
+        doc = self.getDocument()
+        doc.setSliceDistances(*distances)
+        doc.updateAllViews(self)
+
     def make_slice_larger(self):
         doc = self.getDocument()
         doc.makeSliceLarger()

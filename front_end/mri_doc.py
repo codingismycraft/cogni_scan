@@ -17,6 +17,7 @@ class MRIDocument(document.Document):
     _show_only_healthy = False
     _show_labels = "ALL"
     _slice_square_length = 400
+    _slice_distances = 0.2, 0.2 , 0.2
 
 
     def clear(self):
@@ -25,6 +26,12 @@ class MRIDocument(document.Document):
         self._needs_to_update_all = True
         self._patients = None
         self._active_patient_id = None
+
+    def getSliceDistances(self):
+        return self._slice_distances
+
+    def setSliceDistances(self, d0, d1, d2):
+        self._slice_distances = d0, d1, d2
 
     def getHideSkipped(self):
         return self._hide_skipped
