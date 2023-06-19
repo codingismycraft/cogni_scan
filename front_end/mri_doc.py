@@ -34,6 +34,11 @@ class MRIDocument(document.Document):
     def getLabelsToShow(self):
         return self._show_labels
 
+    def saveLabelsToDb(self):
+        if self._patients:
+            self._patients.saveLabelsToDb()
+
+
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
         hide_skipped = True

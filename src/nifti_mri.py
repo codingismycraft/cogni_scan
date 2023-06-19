@@ -130,6 +130,16 @@ class PatientCollection:
 
         self.__was_loaded = True
 
+    def saveLabelsToDb(self):
+        dbutil.execute_non_query("delete from patient")
+        for patient_id, patient in self.__patients.items():
+            label = patient.getLabel()
+            sql = f"INSERT INTO " \
+                  f"patient (patient_id,label) values" \
+                  f"('{patient_id}', '{label}')"
+            print(sql)
+            dbutil.execute_non_query(sql)
+
     def getPatient(self, patiend_id):
         if not self.__was_loaded:
             self.loadFromDb()
@@ -432,10 +442,11 @@ class Scan:
         x = int(x)
         y = int(y)
         l_img = np.full((bounding_square, bounding_square), 0)
-        x_offset = int((bounding_square - y) /2)
-        y_offset = int((bounding_square - x) /2)
+        x_offset = int((bounding_square - y) / 2)
+        y_offset = int((bounding_square - x) / 2)
         s_img = cv2.resize(img, dsize=(y, x), interpolation=cv2.INTER_CUBIC)
-        l_img[y_offset:y_offset + s_img.shape[0], x_offset:x_offset + s_img.shape[1]] = s_img
+        l_img[y_offset:y_offset + s_img.shape[0],
+        x_offset:x_offset + s_img.shape[1]] = s_img
         return l_img
 
 

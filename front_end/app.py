@@ -14,6 +14,7 @@ import cogni_scan.front_end.settings as settings
 import cogni_scan.front_end.top_view as top_view
 
 EVENT_EXIT = "EXIT"
+EVENT_UPDATE_LABELS = "UPDATE_LABELS"
 EVENT_FILTER = "FILTER"
 SEPARATOR = "Separator"
 EVENT_ABOUT = "About"
@@ -23,6 +24,7 @@ MENU = {
         ("Exit", EVENT_EXIT),
     ],
     "Options": [
+        ("Update Patient Labels", EVENT_UPDATE_LABELS),
         ("Filter", EVENT_FILTER),
         (SEPARATOR, None),
         ("Filter", EVENT_FILTER),
@@ -83,6 +85,8 @@ class MainFrame(view.View):
             d = MyDialog(self._root)
         elif event == EVENT_ABOUT:
             d = AboutDialog(self._root)
+        elif event == EVENT_UPDATE_LABELS:
+            mri = self.getDocument().saveLabelsToDb()
 
     def update(self):
         active_path = "No selection."
