@@ -182,10 +182,11 @@ class PatientCollection:
             total_scans += patient.numberOfScans()
 
         return {
-            "Number of Patients": len(self.__patients),
-            "Number of HH Patients": hh_count,
-            "Number of HD Patients": hd_count,
-            "Total Number of Scans": total_scans,
+            "Number of Patients ....": len(self.__patients),
+            "Number of HH Patients..": hh_count,
+            "Number of HD Patients..": hd_count,
+            "Total Number of Scans..": total_scans,
+            "Distinct Days .........": self.numberOfDistinctDays(),
         }
 
     def getMriByMriID(self, mri_id):
@@ -200,6 +201,11 @@ class PatientCollection:
         patient = self.__patients[patient_id]
         return patient.getDescriptiveData()
 
+    def numberOfDistinctDays(self):
+        count = 0
+        for _, v in self.__patients.items():
+            count += v.numberOfDistinctDays()
+        return count
 
 class Patient:
     """Holds the information about a patient.
