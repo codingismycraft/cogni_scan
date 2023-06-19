@@ -17,17 +17,6 @@ import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
 
 
-def saveSlicesToDisk(scan):
-    """Saves the slices for the passed in scan to disk."""
-    base_dir = tempfile.gettempdir()
-    filenames = []
-    for axis in [0, 1, 2]:
-        filename = f"slice_{axis}.jpg"
-        filename = os.path.join(base_dir, filename)
-        filenames.append(filename)
-        img = scan.get_slice(axis=axis)
-        cv2.imwrite(filename, img)
-    return filenames
 
 class RightView(view.View):
 
@@ -75,10 +64,26 @@ class RightView(view.View):
         #tk.Misc.lift(canvas)
         self.update_scan(mri)
 
+    def saveSlicesToDisk(self, scan):
+        """Saves the slices for the passed in scan to disk."""
+        doc = self.getDocument()
+        base_dir = tempfile.gettempdir()
+        filenames = []
+        for axis in [0, 1, 2]:
+            filename = f"slice_{axis}.jpg"
+            filename = os.path.join(base_dir, filename)
+            filenames.append(filename)
+            img = scan.get_slice(
+                axis=axis,
+                bounding_square=doc.getSliceSquareLength()
+            )
+            cv2.imwrite(filename, img)
+        return filenames
+
     def update_scan(self, mri):
         self.imgs = [
             ImageTk.PhotoImage(PIL.Image.open(file))
-            for file in saveSlicesToDisk(mri)
+            for file in self.saveSlicesToDisk(mri)
         ]
 
         x, y = 0, 230

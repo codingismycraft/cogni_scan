@@ -198,6 +198,13 @@ class TopView(view.View):
             button = Button(canvas, text="R", command=callback)
             button.grid(row=2, column=column, pady=8)
 
+        # Add the buttons to make the slices larger or smaller.
+        button = Button(canvas, text="M", command=self.make_slice_larger)
+        button.grid(row=2, column=3, pady=8)
+
+        button = Button(canvas, text="S", command=self.make_slice_smaller)
+        button.grid(row=2, column=4, pady=8)
+
         # Add the skip-it or not.
         self._skipit_checkbox_var = tk.IntVar()
         self._skipit_checkbox_var.set(mri.shouldBeSkiped())
@@ -206,12 +213,23 @@ class TopView(view.View):
             variable=self._skipit_checkbox_var, command=self.changeSkipIt)
         skipit_checkbox.grid(row=3, column=0, pady=8)
 
+    def make_slice_larger(self):
+        doc = self.getDocument()
+        doc.makeSliceLarger()
+        doc.updateAllViews(self)
+
+    def make_slice_smaller(self):
+        doc = self.getDocument()
+        doc.makeSliceSmaller()
+        doc.updateAllViews(self)
+
     def changeSkipIt(self):
         mri = self.getDocument().getActiveMri()
         if not mri:
             return
         value = self._skipit_checkbox_var.get()
         mri.setShouldBeSkiped(value)
+        self.updateSaveButtonState()
 
     def update(self):
         """Called to update the view.

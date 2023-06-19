@@ -16,6 +16,7 @@ class MRIDocument(document.Document):
     _hide_skipped = 1
     _show_only_healthy = False
     _show_labels = "ALL"
+    _slice_square_length = 400
 
 
     def clear(self):
@@ -75,6 +76,23 @@ class MRIDocument(document.Document):
         if patient_id is not self._active_patient_id:
             self._active_patient_id = patient_id
             self._active_mri_id = None
+
+    def makeSliceLarger(self):
+        x = self._slice_square_length
+        if x >=500:
+            return
+        x += x *0.1
+        self._slice_square_length = int(x)
+
+    def makeSliceSmaller(self):
+        x = self._slice_square_length
+        if x <=100:
+            return
+        x -= x *0.1
+        self._slice_square_length = int(x)
+
+    def getSliceSquareLength(self):
+        return self._slice_square_length
 
     def getActivePatient(self):
         if not self._active_patient_id:
