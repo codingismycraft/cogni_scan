@@ -216,9 +216,11 @@ class TopView(view.View):
         # Select the distances of the secondary slices.
         self._slice_dist_labels = []
 
+        doc = self.getDocument()
+        distances = doc.getSliceDistances()
         for i in range(3):
             label = tk.StringVar()
-            label.set("0.4")
+            label.set(f"{distances[i]}")
             self._slice_dist_labels.append(label)
             dist_combo = ttk.Combobox(
                 canvas,

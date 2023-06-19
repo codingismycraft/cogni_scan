@@ -31,7 +31,7 @@ class MRIDocument(document.Document):
         return self._slice_distances
 
     def setSliceDistances(self, d0, d1, d2):
-        self._slice_distances = d0, d1, d2
+        self._slice_distances = float(d0), float(d1), float(d2)
 
     def getHideSkipped(self):
         return self._hide_skipped

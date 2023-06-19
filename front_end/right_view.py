@@ -74,38 +74,50 @@ class RightView(view.View):
         for i, c in enumerate(canvases):
             c.grid(row=i, column=0)
 
-        slice_distances = -0.8, 0, -0.8
 
         index = 0
-        for d,c in zip(slice_distances, canvases):
-            self.update_scan(mri, d, c, index)
+        for canvas in canvases:
+            self.update_scan(mri, canvas, index)
             index += 1
 
         #tk.Misc.lift(canvas)
 
-    def update_scan(self, mri,d, c, index):
+    def update_scan(self, mri,canvas, index):
         imgs = [
             ImageTk.PhotoImage(PIL.Image.open(file))
-            for file in self.saveSlicesToDisk(mri, d, index)
+            for file in self.saveSlicesToDisk(mri, index)
         ]
         x, y = 0, 230
         n = len(imgs)
         for img in imgs:
-            c.create_image(x, y, anchor=W, image=img)
+            canvas.create_image(x, y, anchor=W, image=img)
             x += self.img_canvas_width / n
         self.imgs.extend(imgs)
 
-    def saveSlicesToDisk(self, scan, d, index):
+    def saveSlicesToDisk(self, scan, index):
         """Saves the slices for the passed in scan to disk."""
         doc = self.getDocument()
         base_dir = tempfile.gettempdir()
         filenames = []
+
+        distances = doc.getSliceDistances()
+
+        if index == 0:
+            distances = doc.getSliceDistances()
+            distances = [-x for x in distances]
+        elif index == 1:
+            distances = 0, 0, 0
+        elif index == 2:
+            distances = doc.getSliceDistances()
+            distances = [x for x in distances]
+
+
         for axis in [0, 1, 2]:
             filename = f"slice_{axis}_{index}.jpg"
             filename = os.path.join(base_dir, filename)
             filenames.append(filename)
             img = scan.get_slice(
-                distance_from_center=d,
+                distance_from_center=distances[axis],
                 axis=axis,
                 bounding_square=doc.getSliceSquareLength(),
             )
