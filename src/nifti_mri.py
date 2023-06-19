@@ -6,6 +6,7 @@ import os.path
 
 import cv2
 import nibabel as nib
+import numpy as np
 
 import cogni_scan.src.dbutil as dbutil
 
@@ -426,21 +427,16 @@ class Scan:
         else:
             x = y = bounding_square
 
+        # See also: https://stackoverflow.com/questions/14063070/overlay-a-smaller-image-on-a-larger-image-python-opencv
+
         x = int(x)
         y = int(y)
-
-        resized = cv2.resize(img, dsize=(y, x), interpolation=cv2.INTER_CUBIC)
-        return resized
-
-        # if axis in self.__size_trasnsformers:
-        #     x, y = self.__size_trasnsformers[axis]
-        #     return cv2.resize(
-        #         img,
-        #         dsize=(x, y),
-        #         interpolation=cv2.INTER_CUBIC
-        #     )
-        # else:
-        #     return img
+        l_img = np.full((bounding_square, bounding_square), 0)
+        x_offset = int((bounding_square - y) /2)
+        y_offset = int((bounding_square - x) /2)
+        s_img = cv2.resize(img, dsize=(y, x), interpolation=cv2.INTER_CUBIC)
+        l_img[y_offset:y_offset + s_img.shape[0], x_offset:x_offset + s_img.shape[1]] = s_img
+        return l_img
 
 
 if __name__ == '__main__':
