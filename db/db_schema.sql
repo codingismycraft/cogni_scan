@@ -55,3 +55,8 @@ CREATE TABLE scan_features
 
 \COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 
+
+-- To back the database:
+-- \copy (SELECT * FROM scan) TO '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT * FROM diagnosis) TO '/home/john/repos/cogni_scan/db/diagnosis.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT * FROM patient) TO '/home/john/repos/cogni_scan/db/patient.csv' DELIMITER ',' CSV HEADER;
