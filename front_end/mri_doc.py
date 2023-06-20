@@ -29,6 +29,9 @@ class MRIDocument(document.Document):
         """Returns the patient object for the passed in patent id."""
         return self._patients.getPatient(patient_id)
 
+    def getMriByMriID(self, mri_id):
+        return self._patients.getMriByMriID(mri_id)
+
     def getHideSkipped(self):
         return self._hide_skipped
 

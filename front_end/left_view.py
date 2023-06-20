@@ -64,10 +64,14 @@ class LeftView(ttk.Treeview, view.View):
         for patient_id, _ in doc.getPatientIDs():
             for index, mri in enumerate(doc.getMRIs(patient_id)):
                 mri_id = mri.getMriID()
-                self.insert(
-                    '', tk.END, text=mri_id, iid=mri_id,
-                    tags=(_IS_MRI, mri.getScanID(), _HAS_VGG_FEATURES)
-                )
+                scan_id = mri.getScanID()
+
+                if doc.getMriByMriID(scan_id).hasVGGFeatures():
+                    tags = (_IS_MRI, mri.getScanID(), _HAS_VGG_FEATURES)
+                else:
+                    tags = (_IS_MRI, mri.getScanID())
+
+                self.insert('', tk.END, text=mri_id, iid=mri_id, tags=tags)
                 self.move(mri_id, patient_id, index=index)
         self.bind('<<TreeviewSelect>>', self.eventHandler)
         doc.setNeedsToUpdateAll(False)

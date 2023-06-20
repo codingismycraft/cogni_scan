@@ -246,6 +246,8 @@ class PatientCollection:
         hh_count = 0
         hd_count = 0
         total_scans = 0
+        patients_with_vgg_features = 0
+
         for patient in self.__patients.values():
             if patient.getLabel() == "HH":
                 hh_count += 1
@@ -253,12 +255,16 @@ class PatientCollection:
                 hd_count += 1
             total_scans += patient.numberOfScans()
 
+            if patient.hasVGGFeatures():
+                patients_with_vgg_features += 1
+
         return {
-            "Number of Patients ....": len(self.__patients),
-            "Number of HH Patients..": hh_count,
-            "Number of HD Patients..": hd_count,
-            "Total Number of Scans..": total_scans,
-            "Distinct Days .........": self.numberOfDistinctDays(),
+            "Number of Patients .........": len(self.__patients),
+            "Number of HH Patients.......": hh_count,
+            "Number of HD Patients.......": hd_count,
+            "Total Number of Scans.......": total_scans,
+            "Distinct Days ..............": self.numberOfDistinctDays(),
+            "Patients with VGG features...": patients_with_vgg_features
         }
 
     def getMriByMriID(self, mri_id):
