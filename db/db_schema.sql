@@ -12,7 +12,7 @@ CREATE TABLE scan
     sd0           FLOAT default 0.2,     -- Slice Distance for first axis.
     sd1           FLOAT default 0.2,     -- Slice Distance for middle axis.
     sd2           FLOAT default 0.2,     -- Slice Distance for third axis.
-    is_valid      int   default 0,       -- 1 if was checked and is good for training.
+    validation_status  int   default 0,       -- 0: undefined, 1: invalid,  2: valid
     UNIQUE (fullpath)
 );
 
@@ -64,3 +64,4 @@ CREATE TABLE scan_features
 -- \copy (SELECT * FROM scan) TO '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
 -- \copy (SELECT * FROM diagnosis) TO '/home/john/repos/cogni_scan/db/diagnosis.csv' DELIMITER ',' CSV HEADER;
 -- \copy (SELECT * FROM patient) TO '/home/john/repos/cogni_scan/db/patient.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT skipit, is_valid FROM scan) TO '/home/john/repos/cogni_scan/db/valids.csv' DELIMITER ',' CSV HEADER;

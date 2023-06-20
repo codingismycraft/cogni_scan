@@ -10,12 +10,16 @@ import nibabel as nib
 import numpy as np
 
 import cogni_scan.src.dbutil as dbutil
+import cogni_scan.constants as constants
 
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications.vgg16 import VGG16
 from tensorflow import keras
 
+UNDEFINED_SCAN = constants.UNDEFINED_SCAN
+INVALID_SCAN = constants.INVALID_SCAN
+VALID_SCAN =constants.VALID_SCAN
 
 class _FeatureExtractor:
     _ready = False
@@ -50,20 +54,10 @@ def add_rgb_channels(imgs):
 
 _SQL_SELECT_ALL = """
 select
-    scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
+    scan_id, fullpath, days, patiend_id, origin, health_status, 
+    axis, rotation, sd0, sd1, sd2, validation_status
 from
     scan
-order by patiend_id, days, scan_id
-"""
-
-_SQL_SELECT_NON_SKIPPED = """
-select
-    scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
-from
-    scan
-where skipit=0
 order by patiend_id, days, scan_id
 """
 
@@ -75,8 +69,8 @@ where a.patient_id = b.patient_id and a.days = b.days;
 
 _SQL_SELECT_ONE = """
 select
-    scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
+    scan_id, fullpath, days, patiend_id, origin, health_status, 
+    axis, rotation, sd0, sd1, sd2, validation_status
 from
     scan
 where scan_id={scan_id}
@@ -105,8 +99,9 @@ VALUES (
 
 _SQL_UPDATE_ONE = """
     Update
-        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}',
-        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}, is_valid = {is_valid}
+        Scan set axis='{axis}', rotation='{rotation}',
+        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}, 
+        validation_status = {validation_status}
     where
         fullpath='{fullpath}'
 """.format
@@ -141,8 +136,8 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-    def loadFromDb(self, hide_skipped=False, show_labels="ALL",
-                   show_only_healthy=False, show_only_valid=False):
+    def loadFromDb(self, show_labels="ALL",
+                   show_only_healthy=False, show_status=None):
         """Load data from the database and populate the patient collection.
 
         Each row from the database is processed to create a new Scan object,
@@ -153,31 +148,28 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
+        if show_status is None:
+            show_status = constants.ALL_SCANS
+
         # Load the scan ids that have VGG features in the database.
         having_vgg_features = set()
         for row in dbutil.execute_query(_SQL_SELECT_SCANS_WITH_FEATURES):
             scan_id = row[0]
             having_vgg_features.add(scan_id)
 
-        # Load the scans from the database.
-        if hide_skipped:
-            sql = _SQL_SELECT_NON_SKIPPED
-        else:
-            sql = _SQL_SELECT_ALL
-
-        for row in dbutil.execute_query(sql):
+        for row in dbutil.execute_query(_SQL_SELECT_ALL):
             (scan_id, fullpath, days, patient_id, origin,
-             skipit, health_status, axis, rotation, sd0, sd1, sd2,
-             is_valid) = row
+             health_status, axis, rotation, sd0, sd1, sd2,
+             status) = row
 
-            if not is_valid and show_only_valid:
+            if show_status != constants.ALL_SCANS and status != show_status:
                 continue
 
             if patient_id not in self.__patients:
                 self.__patients[patient_id] = Patient(patient_id)
 
-            scan = Scan(scan_id, fullpath, days, patient_id, origin, skipit,
-                        health_status, axis, rotation, sd0, sd1, sd2, is_valid)
+            scan = Scan(scan_id, fullpath, days, patient_id, origin,
+                        health_status, axis, rotation, sd0, sd1, sd2, status)
 
             # Set the has VGG features if needed.
             if scan.getScanID() in having_vgg_features:
@@ -196,7 +188,7 @@ class PatientCollection:
             for _, v in self.__patients.items():
                 v.keepOnlyHealthyScans()
 
-        # Filter by selected label.
+        # Filter by selected label (like HH or HD for example).
         if show_labels != "ALL":
             labels = show_labels.split("-")
             temp = {}
@@ -206,9 +198,17 @@ class PatientCollection:
                     temp[k] = v
             self.__patients = temp
 
+        # Remove all patients with no scans.
+        temp = {}
+        for k, v in self.__patients.items():
+            if v.numberOfScans() >0:
+                temp[k] = v
+        self.__patients = temp
+
         self.__was_loaded = True
 
     def saveLabelsToDb(self):
+        """Stores the labels (like HH or HD) to the database."""
         dbutil.execute_non_query("delete from patient")
         for patient_id, patient in self.__patients.items():
             label = patient.getLabel()
@@ -219,6 +219,7 @@ class PatientCollection:
             dbutil.execute_non_query(sql)
 
     def getPatient(self, patiend_id):
+        """Returns a patient object for the passed in patient id."""
         if not self.__was_loaded:
             self.loadFromDb()
         assert self.__was_loaded
@@ -236,6 +237,7 @@ class PatientCollection:
             yield patiend_id, patient.getTitle()
 
     def getMrisByPatient(self, patient_id):
+        """Yields the MRIS for the passed in patient."""
         if not self.__was_loaded:
             self.loadFromDb()
         assert self.__was_loaded
@@ -246,7 +248,7 @@ class PatientCollection:
             yield patient.getScan(i)
 
     def getDesctiptiveData(self):
-
+        """Returns the descriptive data to use in the UI."""
         hh_count = 0
         hd_count = 0
         total_scans = 0
@@ -272,10 +274,12 @@ class PatientCollection:
         }
 
     def getMriByMriID(self, mri_id):
+        """Returns the MRI object for the passed in mri id."""
         assert mri_id in self.__mri_id_to_mri
         return self.__mri_id_to_mri[mri_id]
 
     def getDesctiptiveDataForPatient(self, patient_id):
+        """Returns the descriptive data for the passed in patient id."""
         if not self.__was_loaded:
             self.loadFromDb()
         assert self.__was_loaded
@@ -284,12 +288,14 @@ class PatientCollection:
         return patient.getDescriptiveData()
 
     def numberOfDistinctDays(self):
+        """Returns the number of days having scans."""
         count = 0
         for _, v in self.__patients.items():
             count += v.numberOfDistinctDays()
         return count
 
     def saveVGG16Features(self):
+        """Saves the VGG16 features for the selected set of patients."""
         for k, v in self.__patients.items():
             v.saveVGG16Features()
 
@@ -312,15 +318,18 @@ class Patient:
     """
 
     def __init__(self, patient_id):
+        """Initializes a new Patient."""
         self.__patient_id = patient_id
         self.__scans = []
         self.__exit_health_status = '?'
         self.__has_scans_with_vgg_features = False
 
     def hasVGGFeatures(self):
+        """Returns true if the patinent has precalculated VGG features."""
         return self.__has_scans_with_vgg_features
 
     def getDescriptiveData(self):
+        """Returns the descriptive data for the patient (used from the UI.)"""
         return {
             "Patient ID": self.__patient_id,
             "Health Status": self.getLabel(),
@@ -329,26 +338,32 @@ class Patient:
         }
 
     def keepOnlyHealthyScans(self):
+        """Removes the non healthy scans from the patient Scan collection."""
         self.__scans = [
             scan for scan in self.__scans if scan.getHealthStatus() == 0]
 
     def addScan(self, scan):
+        """Adds the passed-in scan to the collection of the scans."""
         self.__scans.append(scan)
         self.__scans.sort(key=lambda x: x.getDays())
         if scan.hasVGGFeatures():
             self.__has_scans_with_vgg_features = True
 
     def getTitle(self):
+        """Returns the title to use for the UI."""
         return f'{self.__patient_id} {self.getLabel()}'
 
     def getExitHealthStatus(self):
+        """Returns the last health status know for the patient."""
         return self.__exit_health_status
 
     def setExitHealthStatus(self, health_status):
+        """Sets the last health status for the patient."""
         assert 0 <= health_status <= 2
         self.__exit_health_status = health_status
 
     def getLabel(self):
+        """Gets the label (like HH or HD) to use for model training."""
         exit_status = int2HealthStatus(self.__exit_health_status)
         try:
             enter_status = int2HealthStatus(self.__scans[0].getHealthStatus())
@@ -359,19 +374,23 @@ class Patient:
         return label
 
     def numberOfScans(self):
+        """The number of scans for the patient."""
         return len(self.__scans)
 
     def numberOfDistinctDays(self):
+        """The number of days that the patient has scans for."""
         days = set()
         for scan in self.__scans:
             days.add(scan.getDays())
         return len(days)
 
     def getScan(self, index):
+        """Returns the scan object based on the index that is passed in."""
         assert 0 <= index < len(self.__scans)
         return self.__scans[index]
 
     def saveVGG16Features(self):
+        """Saves the VGG16 features for all the scans of the patient."""
         for scan in self.__scans:
             scan.saveVGG16Features()
 
@@ -379,31 +398,33 @@ class Patient:
 class Scan:
 
     def __init__(self, scan_id, fullpath, days, patient_id,
-                 origin, skipit, health_status, axis, rotation, sd0, sd1, sd2,
-                 is_valid):
+                 origin, health_status, axis, rotation, sd0, sd1, sd2,
+                 validation_status):
         self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
         self.__days = days
         self.__patient_id = patient_id
         self.__origin = origin
-        self.__skipit = skipit
         self.__health_status = health_status
         self.__axis_mapping = {int(k): v for k, v in axis.items()}
         self.__rotation = rotation
         self.__img = None
         self.__slice_distances = [sd0, sd1, sd2]
-        self.__is_valid = is_valid
+        self.__validation_status = validation_status
         self.__is_dirty = False
         self.__has_VGG_features = False
 
     def hasVGGFeatures(self):
+        """Returns True if the VGG features for the scan are in the db."""
         return self.__has_VGG_features
 
     def setToHasVGGFeatures(self):
+        """Sets the flag that signifies existence of the VGG features."""
         self.__has_VGG_features = True
 
     def __repr__(self):
+        """Returns a string representation of the object."""
         return f'NiftiMri({self.__filepath})'
 
     def restoreOriginalState(self):
@@ -420,14 +441,13 @@ class Scan:
         axis = json.dumps(self.__axis_mapping)
         rotation = json.dumps(self.__rotation)
         sql = _SQL_UPDATE_ONE(
-            skipit=self.__skipit,
             axis=axis,
             rotation=rotation,
             fullpath=self.__filepath,
             sd0=sd0,
             sd1=sd1,
             sd2=sd2,
-            is_valid=self.__is_valid
+            validation_status=self.__validation_status
         )
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
@@ -449,22 +469,20 @@ class Scan:
         self.__slice_distances[index] = slice_distance
         self.__is_dirty = True
 
-    def shouldBeSkiped(self):
-        return self.__skipit
+    def getValidationStatus(self):
+        """Returns the validation status of the scan.
 
-    def setShouldBeSkiped(self, value):
-        assert value in (0, 1)
-        if self.__skipit != value:
-            self.__skipit = value
-            self.__is_dirty = True
+        There are three possible validation statuses (defined in the
+        constansts module: UNDEFINED_SCAN, INVALID_SCAN, VALID_SCAN
+        """
+        return self.__validation_status
 
-    def isValid(self):
-        return self.__is_valid
+    def setValidationStatus(self, validation_status):
+        """Sets the validation status."""
+        assert validation_status in (UNDEFINED_SCAN, INVALID_SCAN, VALID_SCAN)
 
-    def setIsValid(self, value):
-        assert value in (0, 1)
-        if self.__is_valid != value:
-            self.__is_valid = value
+        if validation_status != self.__validation_status:
+            self.__validation_status = validation_status
             self.__is_dirty = True
 
     def getMriID(self):

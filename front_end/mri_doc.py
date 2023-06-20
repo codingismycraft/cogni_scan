@@ -1,5 +1,6 @@
 from tkinter.messagebox import askyesno
 
+import cogni_scan.constants as constants
 import cogni_scan.front_end.cfc.document as document
 import cogni_scan.src.nifti_mri as nifti_mri
 
@@ -13,8 +14,7 @@ class MRIDocument(document.Document):
     _needs_to_update_all = True
     _patients = None
     _active_patient_id = None
-    _hide_skipped = 1
-    _show_only_valid = 0
+    _validation_status = constants.ALL_SCANS
     _show_only_healthy = False
     _show_labels = "ALL"
     _slice_square_length = 400
@@ -33,11 +33,8 @@ class MRIDocument(document.Document):
     def getMriByMriID(self, mri_id):
         return self._patients.getMriByMriID(mri_id)
 
-    def getHideSkipped(self):
-        return self._hide_skipped
-
-    def getShowOnlyValid(self):
-        return self._show_only_valid
+    def getValidationStatus(self):
+        return self._validation_status
 
     def getShowOnlyHealthy(self):
         return self._show_only_healthy
@@ -55,12 +52,6 @@ class MRIDocument(document.Document):
 
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""
-        hide_skipped = True
-        if 'hide_skipped' in kwargs:
-            hide_skipped = kwargs.get('hide_skipped')
-            assert hide_skipped in (0, 1)
-            hide_skipped = bool(hide_skipped)
-
         show_labels = "ALL"
         if 'show_labels' in kwargs:
             show_labels = kwargs.get('show_labels')
@@ -71,21 +62,22 @@ class MRIDocument(document.Document):
             assert show_only_healthy in (0, 1)
             show_only_healthy = bool(show_only_healthy)
 
-        show_only_valid = False
-        if 'show_only_healthy' in kwargs:
-            show_only_valid = kwargs.get('show_only_valid')
-            assert show_only_valid in (0, 1)
-            show_only_valid = bool(show_only_valid)
+        validation_status = constants.ALL_SCANS
+        if 'validation_status' in kwargs:
+            validation_status = kwargs.get('validation_status')
 
         self.clear()
         self._active_mri_id = None
         self._patients = nifti_mri.PatientCollection()
-        self._patients.loadFromDb(hide_skipped, show_labels, show_only_healthy,
-                                  show_only_valid)
-        self._hide_skipped = 1 if hide_skipped else 0
-        self._show_only_valid = 1 if show_only_valid else 0
+
+        self._patients.loadFromDb(
+            show_labels,
+            show_only_healthy,
+            validation_status
+        )
         self._show_only_healthy = 1 if show_only_healthy else 0
         self._show_labels = show_labels
+        self._validation_status = validation_status
         self._needs_to_update_all = True
         self.updateAllViews()
 
@@ -158,11 +150,6 @@ class MRIDocument(document.Document):
         mri = self.getActiveMri()
         if mri and mri.isDirty():
             mri.saveToDb()
-
-    def setIncludeSkiped(self, inlude_skipped=True):
-        if includeSkiped != self._include_skiped:
-            self._include_skiped = include_skiped
-            self._main_frame.updateViews()
 
     def getPatientIDs(self):
         for patient_id, caption in self._patients.getPatientIDs():
