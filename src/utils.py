@@ -1,6 +1,8 @@
 
-import nibabel as nib
+import datetime
+import functools
 
+import nibabel as nib
 
 import cogni_scan.src.nifti_mri as nm
 
@@ -34,6 +36,19 @@ def getAxesOrientation():
 
 def loadMRI(filepath):
     return nm.NiftiMri(filepath)
+
+def timeit(foo):
+    @functools.wraps(foo)
+    def inner(*args, **kwargs):
+        t1 = datetime.datetime.now()
+        try:
+            return foo(*args, **kwargs)
+        except:
+            raise
+        finally:
+            t2 = datetime.datetime.now()
+            print("Duration: ", (t2-t1).total_seconds())
+    return inner
 
 
 

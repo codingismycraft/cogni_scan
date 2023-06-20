@@ -8,7 +8,7 @@ import tkinter.ttk as ttk
 
 import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
-import cogni_scan.src.utils as cs
+import cogni_scan.src.utils as utils
 
 
 class TopView(view.View):
@@ -183,7 +183,7 @@ class TopView(view.View):
         # Add the buttons to change the Axes.
         column = 0
         buttons = []
-        for axis in cs.getAxesOrientation():
+        for axis in utils.getAxesOrientation():
             callback = functools.partial(self.changeAxis, axis)
             button = Button(canvas, text=axis, command=callback)
             buttons.append(button)
@@ -258,6 +258,7 @@ class TopView(view.View):
         mri.setShouldBeSkiped(value)
         self.updateSaveButtonState()
 
+    @utils.timeit
     def update(self):
         """Called to update the view.
 

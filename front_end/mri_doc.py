@@ -25,6 +25,10 @@ class MRIDocument(document.Document):
         self._patients = None
         self._active_patient_id = None
 
+    def getPatientById(self, patient_id):
+        """Returns the patient object for the passed in patent id."""
+        return self._patients.getPatient(patient_id)
+
     def getHideSkipped(self):
         return self._hide_skipped
 

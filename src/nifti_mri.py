@@ -34,14 +34,6 @@ class _FeatureExtractor:
 
 _feature_extractor = _FeatureExtractor()
 
-_SQL_UPDATE_ONE = """
-    Update
-        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}',
-        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}
-    where
-        fullpath='{fullpath}'
-""".format
-
 
 def add_rgb_channels(imgs):
     """Adds the RGB channels to a collection of gray scale images.
@@ -111,6 +103,16 @@ VALUES (
 )
 """
 
+_SQL_UPDATE_ONE = """
+    Update
+        Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}',
+        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}
+    where
+        fullpath='{fullpath}'
+""".format
+
+_SQL_SELECT_SCANS_WITH_FEATURES = """select scan_id from scan_features"""
+
 
 def int2HealthStatus(value):
     if value == 0:
@@ -151,6 +153,13 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
+        # Load the scan ids that have VGG features in the database.
+        having_vgg_features = set()
+        for row in dbutil.execute_query(_SQL_SELECT_SCANS_WITH_FEATURES):
+            scan_id = row[0]
+            having_vgg_features.add(scan_id)
+
+        # Load the scans from the database.
         if hide_skipped:
             sql = _SQL_SELECT_NON_SKIPPED
         else:
@@ -166,6 +175,10 @@ class PatientCollection:
             scan = Scan(scan_id, fullpath, days, patient_id, origin, skipit,
                         health_status, axis, rotation, sd0, sd1, sd2)
 
+            # Set the has VGG features if needed.
+            if scan.getScanID() in having_vgg_features:
+                scan.setToHasVGGFeatures()
+
             self.__patients[patient_id].addScan(scan)
             self.__mri_id_to_mri[scan.getScanID()] = scan
 
@@ -179,6 +192,7 @@ class PatientCollection:
             for _, v in self.__patients.items():
                 v.keepOnlyHealthyScans()
 
+        # Filter by selected label.
         if show_labels != "ALL":
             labels = show_labels.split("-")
             temp = {}
@@ -291,6 +305,10 @@ class Patient:
         self.__patient_id = patient_id
         self.__scans = []
         self.__exit_health_status = '?'
+        self.__has_scans_with_vgg_features = False
+
+    def hasVGGFeatures(self):
+        return self.__has_scans_with_vgg_features
 
     def getDescriptiveData(self):
         return {
@@ -307,6 +325,8 @@ class Patient:
     def addScan(self, scan):
         self.__scans.append(scan)
         self.__scans.sort(key=lambda x: x.getDays())
+        if scan.hasVGGFeatures():
+            self.__has_scans_with_vgg_features = True
 
     def getTitle(self):
         return f'{self.__patient_id} {self.getLabel()}'
@@ -363,6 +383,13 @@ class Scan:
         self.__img = None
         self.__slice_distances = [sd0, sd1, sd2]
         self.__is_dirty = False
+        self.__has_VGG_features = False
+
+    def hasVGGFeatures(self):
+        return self.__has_VGG_features
+
+    def setToHasVGGFeatures(self):
+        self.__has_VGG_features = True
 
     def __repr__(self):
         return f'NiftiMri({self.__filepath})'
@@ -525,7 +552,6 @@ class Scan:
         return l_img
 
     def saveVGG16Features(self):
-        # https://stackoverflow.com/questions/60278766/best-way-to-insert-python-numpy-array-into-postgresql-database
         print(self.__scan_id)
         scan_id = self.__scan_id
         d0, d1, d2 = self.__slice_distances

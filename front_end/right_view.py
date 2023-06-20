@@ -15,6 +15,7 @@ import tkinter.ttk as ttk
 import cogni_scan.src.utils as cs
 import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
+import cogni_scan.src.utils as utils
 
 
 class RightView(view.View):
@@ -36,6 +37,7 @@ class RightView(view.View):
                 continue
             widget.destroy()
 
+    @utils.timeit
     def update(self):
         """Called to update the view.
 
