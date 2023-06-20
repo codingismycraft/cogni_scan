@@ -14,6 +14,7 @@ class MRIDocument(document.Document):
     _patients = None
     _active_patient_id = None
     _hide_skipped = 1
+    _show_only_valid = 0
     _show_only_healthy = False
     _show_labels = "ALL"
     _slice_square_length = 400
@@ -34,6 +35,9 @@ class MRIDocument(document.Document):
 
     def getHideSkipped(self):
         return self._hide_skipped
+
+    def getShowOnlyValid(self):
+        return self._show_only_valid
 
     def getShowOnlyHealthy(self):
         return self._show_only_healthy
@@ -67,11 +71,19 @@ class MRIDocument(document.Document):
             assert show_only_healthy in (0, 1)
             show_only_healthy = bool(show_only_healthy)
 
+        show_only_valid = False
+        if 'show_only_healthy' in kwargs:
+            show_only_valid = kwargs.get('show_only_valid')
+            assert show_only_valid in (0, 1)
+            show_only_valid = bool(show_only_valid)
+
         self.clear()
         self._active_mri_id = None
         self._patients = nifti_mri.PatientCollection()
-        self._patients.loadFromDb(hide_skipped, show_labels, show_only_healthy)
+        self._patients.loadFromDb(hide_skipped, show_labels, show_only_healthy,
+                                  show_only_valid)
         self._hide_skipped = 1 if hide_skipped else 0
+        self._show_only_valid = 1 if show_only_valid else 0
         self._show_only_healthy = 1 if show_only_healthy else 0
         self._show_labels = show_labels
         self._needs_to_update_all = True

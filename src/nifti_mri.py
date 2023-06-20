@@ -51,7 +51,7 @@ def add_rgb_channels(imgs):
 _SQL_SELECT_ALL = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2
+    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
 from
     scan
 order by patiend_id, days, scan_id
@@ -60,7 +60,7 @@ order by patiend_id, days, scan_id
 _SQL_SELECT_NON_SKIPPED = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2
+    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
 from
     scan
 where skipit=0
@@ -76,7 +76,7 @@ where a.patient_id = b.patient_id and a.days = b.days;
 _SQL_SELECT_ONE = """
 select
     scan_id, fullpath, days, patiend_id, origin,
-    skipit, health_status, axis, rotation, sd0, sd1, sd2
+    skipit, health_status, axis, rotation, sd0, sd1, sd2, is_valid
 from
     scan
 where scan_id={scan_id}
@@ -106,7 +106,7 @@ VALUES (
 _SQL_UPDATE_ONE = """
     Update
         Scan set skipit={skipit}, axis='{axis}', rotation='{rotation}',
-        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}
+        sd0 = {sd0}, sd1 = {sd1},  sd2 = {sd2}, is_valid = {is_valid}
     where
         fullpath='{fullpath}'
 """.format
@@ -142,7 +142,7 @@ class PatientCollection:
         self.__was_loaded = False
 
     def loadFromDb(self, hide_skipped=False, show_labels="ALL",
-                   show_only_healthy=False):
+                   show_only_healthy=False, show_only_valid=False):
         """Load data from the database and populate the patient collection.
 
         Each row from the database is processed to create a new Scan object,
@@ -167,13 +167,17 @@ class PatientCollection:
 
         for row in dbutil.execute_query(sql):
             (scan_id, fullpath, days, patient_id, origin,
-             skipit, health_status, axis, rotation, sd0, sd1, sd2) = row
+             skipit, health_status, axis, rotation, sd0, sd1, sd2,
+             is_valid) = row
+
+            if not is_valid and show_only_valid:
+                continue
 
             if patient_id not in self.__patients:
                 self.__patients[patient_id] = Patient(patient_id)
 
             scan = Scan(scan_id, fullpath, days, patient_id, origin, skipit,
-                        health_status, axis, rotation, sd0, sd1, sd2)
+                        health_status, axis, rotation, sd0, sd1, sd2, is_valid)
 
             # Set the has VGG features if needed.
             if scan.getScanID() in having_vgg_features:
@@ -375,7 +379,8 @@ class Patient:
 class Scan:
 
     def __init__(self, scan_id, fullpath, days, patient_id,
-                 origin, skipit, health_status, axis, rotation, sd0, sd1, sd2):
+                 origin, skipit, health_status, axis, rotation, sd0, sd1, sd2,
+                 is_valid):
         self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
@@ -388,6 +393,7 @@ class Scan:
         self.__rotation = rotation
         self.__img = None
         self.__slice_distances = [sd0, sd1, sd2]
+        self.__is_valid = is_valid
         self.__is_dirty = False
         self.__has_VGG_features = False
 
@@ -420,7 +426,8 @@ class Scan:
             fullpath=self.__filepath,
             sd0=sd0,
             sd1=sd1,
-            sd2=sd2
+            sd2=sd2,
+            is_valid=self.__is_valid
         )
         dbutil.execute_non_query(sql)
         self.__is_dirty = False
@@ -449,6 +456,15 @@ class Scan:
         assert value in (0, 1)
         if self.__skipit != value:
             self.__skipit = value
+            self.__is_dirty = True
+
+    def isValid(self):
+        return self.__is_valid
+
+    def setIsValid(self, value):
+        assert value in (0, 1)
+        if self.__is_valid != value:
+            self.__is_valid = value
             self.__is_dirty = True
 
     def getMriID(self):

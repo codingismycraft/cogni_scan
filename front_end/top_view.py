@@ -95,6 +95,19 @@ class TopView(view.View):
         )
         skipit_checkbox.grid(row=1, column=0, pady=8)
 
+        # Add the show Valid only checkbox.
+        self._show_only_valid_var = tk.IntVar()
+        self._show_only_valid_var.set(doc.getShowOnlyValid())
+        show_only_valid_checkbox = tk.Checkbutton(
+            canvas,
+            text="Show Only Valid",
+            variable=self._show_only_valid_var,
+            command=self.refreshDisplay,
+            bg=settings.TOP_BACKGROUND_COLOR,
+            highlightthickness=0
+        )
+        show_only_valid_checkbox.grid(row=2, column=0, pady=8)
+
         # Add a checkbox to only use healthy scans.
         self._show_healthy_only_var = tk.IntVar()
         doc = self.getDocument()
@@ -107,15 +120,17 @@ class TopView(view.View):
             bg=settings.TOP_BACKGROUND_COLOR,
             highlightthickness=0
         )
-        show_only_healthy_checkbox.grid(row=2, column=0, pady=8)
+        show_only_healthy_checkbox.grid(row=3, column=0, pady=8)
 
     def refreshDisplay(self, *args, **kwargs):
         hide_skipped = self._hide_skiped_var.get()
         labels = self._current_health_label.get()
         show_only_healthy = self._show_healthy_only_var.get()
+        show_only_valid = self._show_only_valid_var.get()
         doc = self.getDocument()
         doc.load(hide_skipped=hide_skipped, show_labels=labels,
-                 show_only_healthy=show_only_healthy)
+                 show_only_healthy=show_only_healthy,
+                 show_only_valid=show_only_valid)
 
     def _updateCollectionData(self):
         """Paints screen with descriptive data."""
@@ -213,6 +228,14 @@ class TopView(view.View):
             variable=self._skipit_checkbox_var, command=self.changeSkipIt)
         skipit_checkbox.grid(row=3, column=0, pady=8)
 
+        # Add the is valie checkbox.
+        self._is_valid_checkbox_var = tk.IntVar()
+        self._is_valid_checkbox_var.set(mri.isValid())
+        is_valid_checkbox = tk.Checkbutton(
+            canvas, text="Is Valid",
+            variable=self._is_valid_checkbox_var, command=self.changeIsValid)
+        is_valid_checkbox.grid(row=4, column=0, pady=8)
+
         # Select the distances of the secondary slices.
         self._slice_dist_labels = []
 
@@ -256,6 +279,14 @@ class TopView(view.View):
             return
         value = self._skipit_checkbox_var.get()
         mri.setShouldBeSkiped(value)
+        self.updateSaveButtonState()
+
+    def changeIsValid(self):
+        mri = self.getDocument().getActiveMri()
+        if not mri:
+            return
+        value = self._is_valid_checkbox_var.get()
+        mri.setIsValid(value)
         self.updateSaveButtonState()
 
     @utils.timeit

@@ -12,6 +12,7 @@ CREATE TABLE scan
     sd0           FLOAT default 0.2,     -- Slice Distance for first axis.
     sd1           FLOAT default 0.2,     -- Slice Distance for middle axis.
     sd2           FLOAT default 0.2,     -- Slice Distance for third axis.
+    is_valid      int   default 0,       -- 1 if was checked and is good for training.
     UNIQUE (fullpath)
 );
 
