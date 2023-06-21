@@ -477,13 +477,16 @@ class Scan:
         """
         return self.__validation_status
 
-    def setValidationStatus(self, validation_status):
+    def setValidationStatus(self, validation_status, autosave=False):
         """Sets the validation status."""
         assert validation_status in (UNDEFINED_SCAN, INVALID_SCAN, VALID_SCAN)
 
         if validation_status != self.__validation_status:
             self.__validation_status = validation_status
             self.__is_dirty = True
+
+            if autosave:
+                self.saveToDb()
 
     def getMriID(self):
         hs = int2HealthStatus(self.getHealthStatus())
@@ -547,7 +550,7 @@ class Scan:
     def axis_mapping(self):
         return self.__axis_mapping.copy()
 
-    def get_slice(self, distance_from_center=0, axis=2, bounding_square=400):
+    def get_slice(self, distance_from_center=0, axis=2, bounding_square=300):
         if self.__img is None:
             self.__img = nib.load(self.__filepath).get_fdata()
         axis = self.__axis_mapping.get(axis)

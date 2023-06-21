@@ -52,7 +52,7 @@ class RightView(view.View):
         # Add the canvas where the slices are drawn.
         self.imgs = []
         self.img_canvas_width = 1250
-        self.img_canvas_height = 400
+        self.img_canvas_height = 330
 
         canvases = []
         for i in range(3):
@@ -87,7 +87,7 @@ class RightView(view.View):
             ImageTk.PhotoImage(PIL.Image.open(file))
             for file in self.saveSlicesToDisk(mri, index)
         ]
-        x, y = 0, 230
+        x, y = 0, 190
         n = len(imgs)
         for img in imgs:
             canvas.create_image(x, y, anchor=W, image=img)

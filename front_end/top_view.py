@@ -184,16 +184,24 @@ class TopView(view.View):
             label.grid(row=row, column=1, sticky=W)
 
     def _updateScanData(self):
+        """Updates the view with Scan specific data."""
         mri = self.getDocument().getActiveMri()
         if not mri:
             return
 
-        canvas = Canvas(self.__parent_frame, height=60,
-                        bg=settings.TOP_BACKGROUND_COLOR)
-        canvas.pack(side="left", fill="both", expand=False, padx=10)
+        main_canvas = Canvas(
+            self.__parent_frame, height=60, bg=settings.TOP_BACKGROUND_COLOR
+        )
+        main_canvas.pack(side="left", fill="both", expand=False, padx=10)
+
+        left_canvas = Canvas(main_canvas, height=60, bg=settings.TOP_BACKGROUND_COLOR)
+        left_canvas.pack(side="left", fill="both", expand=False, padx=10)
+
+        right_canvas = Canvas(main_canvas, height=60, bg=settings.TOP_BACKGROUND_COLOR)
+        right_canvas.pack(side="left", fill="both", expand=False, padx=10)
 
         self._save_button = Button(
-            canvas,
+            left_canvas,
             text="Save",
             command=self.saveChanges)
 
@@ -205,7 +213,7 @@ class TopView(view.View):
         buttons = []
         for axis in utils.getAxesOrientation():
             callback = functools.partial(self.changeAxis, axis)
-            button = Button(canvas, text=axis, command=callback)
+            button = Button(left_canvas, text=axis, command=callback)
             buttons.append(button)
 
         for b in buttons:
@@ -215,62 +223,57 @@ class TopView(view.View):
         # Add the buttons to rotate the slices if needed.
         for column, axis in enumerate([0, 1, 2]):
             callback = functools.partial(self.changeOrienation, axis)
-            button = Button(canvas, text="R", command=callback)
+            button = Button(left_canvas, text="R", command=callback)
             button.grid(row=2, column=column, pady=8)
 
         # Add the buttons to make the slices larger or smaller.
-        button = Button(canvas, text="M", command=self.make_slice_larger)
+        button = Button(left_canvas, text="M", command=self.make_slice_larger)
         button.grid(row=2, column=3, pady=8)
 
-        button = Button(canvas, text="S", command=self.make_slice_smaller)
+        button = Button(left_canvas, text="S", command=self.make_slice_smaller)
         button.grid(row=2, column=4, pady=8)
-
-        # Add the radio buttons to select scans based on their valid status.
-        self._validation_status_for_scan_var = IntVar()
-
-        self._validation_status_for_scan_var.set(mri.getValidationStatus())
-
-        rb_1 = Radiobutton(canvas, text="Undefined",
-                           variable=self._validation_status_for_scan_var,
-                           value=constants.UNDEFINED_SCAN,
-                           command=self.changeValidationStatusForSelectedScan)
-        rb_1.grid(row=3, column=0, pady=8)
-
-        rb_2 = Radiobutton(canvas, text="Invalid",
-                           variable=self._validation_status_for_scan_var,
-                           value=constants.INVALID_SCAN,
-                           command=self.changeValidationStatusForSelectedScan)
-        rb_2.grid(row=4, column=0, pady=8)
-
-        rb_3 = Radiobutton(canvas, text="Valid",
-                           variable=self._validation_status_for_scan_var,
-                           value=constants.VALID_SCAN,
-                           command=self.changeValidationStatusForSelectedScan)
-        rb_3.grid(row=5, column=0, pady=8)
 
         # Select the distances of the secondary slices.
         self._slice_dist_labels = []
-
         distances = mri.getSliceDistances()
         for i in range(3):
             label = tk.StringVar()
             label.set(f"{distances[i]}")
             self._slice_dist_labels.append(label)
             dist_combo = ttk.Combobox(
-                canvas,
+                left_canvas,
                 values=[f'0.{i}' for i in range(1, 10)],
                 textvariable=label,
                 width=3
             )
-            dist_combo.grid(row=6, column=1 + i, pady=8)
+            dist_combo.grid(row=4, column=1 + i, pady=8)
             dist_combo.bind('<<ComboboxSelected>>', self.changeSliceDistance)
+
+        # Add the radio buttons to select scans based on their valid status.
+        self._validation_status_for_scan_var = IntVar()
+        self._validation_status_for_scan_var.set(mri.getValidationStatus())
+        rb_1 = Radiobutton(right_canvas, text="Undefined",
+                           variable=self._validation_status_for_scan_var,
+                           value=constants.UNDEFINED_SCAN,
+                           command=self.changeValidationStatusForSelectedScan)
+        rb_1.grid(row=0, column=0, pady=8)
+        rb_2 = Radiobutton(right_canvas, text="Invalid",
+                           variable=self._validation_status_for_scan_var,
+                           value=constants.INVALID_SCAN,
+                           command=self.changeValidationStatusForSelectedScan)
+        rb_2.grid(row=1, column=0, pady=8)
+        rb_3 = Radiobutton(right_canvas, text="Valid",
+                           variable=self._validation_status_for_scan_var,
+                           value=constants.VALID_SCAN,
+                           command=self.changeValidationStatusForSelectedScan)
+        rb_3.grid(row=2, column=0, pady=8)
 
     def changeValidationStatusForSelectedScan(self):
         mri = self.getDocument().getActiveMri()
         if not mri:
             return
         value = self._validation_status_for_scan_var.get()
-        mri.setValidationStatus(value)
+        mri.setValidationStatus(value, autosave=True)
         self.updateSaveButtonState()
 
     def changeSliceDistance(self, *args, **kwargs):
