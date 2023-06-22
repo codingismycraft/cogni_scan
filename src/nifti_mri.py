@@ -19,7 +19,8 @@ from tensorflow import keras
 
 UNDEFINED_SCAN = constants.UNDEFINED_SCAN
 INVALID_SCAN = constants.INVALID_SCAN
-VALID_SCAN =constants.VALID_SCAN
+VALID_SCAN = constants.VALID_SCAN
+
 
 class _FeatureExtractor:
     _ready = False
@@ -211,7 +212,7 @@ class PatientCollection:
         # Remove all patients with no scans.
         temp = {}
         for k, v in self.__patients.items():
-            if v.numberOfScans() >0:
+            if v.numberOfScans() > 0:
                 temp[k] = v
         self.__patients = temp
 
@@ -639,6 +640,8 @@ class Scan:
 
         print("Inserting to the database: ", self.__scan_id)
         dbutil.execute_non_query(sql)
+        dbutil.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
+        dbutil.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
 
 
 if __name__ == '__main__':

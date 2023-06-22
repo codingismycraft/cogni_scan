@@ -54,7 +54,7 @@ class MRIDocument(document.Document):
         if self._patients:
             self._patients.saveVGG16Features()
 
-    def makeMovie(self, axis=0):
+    def makeMovie(self, axis=1):
         """Plays a video using the current MRI and the passed in axis."""
         mri = self.getActiveMri()
         if not mri:

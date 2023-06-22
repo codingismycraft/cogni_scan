@@ -54,10 +54,20 @@ CREATE TABLE scan_features
     features_slice22 jsonb,
     features_slice23 jsonb,
     patient_id VARCHAR(512),
-    label VARCHAR(2)
+    label VARCHAR(2),
     UNIQUE (scan_id)
 );
 
+create table datasets
+(
+    dataset_id serial primary key,
+    name VARCHAR(512),
+    created_at TIMESTAMP,
+    training_scan_ids jsonb,
+    validation_scan_ids jsonb,
+    testing_scan_ids jsonb,
+    UNIQUE (name)
+);
 
 \COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 
