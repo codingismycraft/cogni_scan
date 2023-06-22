@@ -19,6 +19,7 @@ EVENT_FILTER = "FILTER"
 SEPARATOR = "Separator"
 EVENT_ABOUT = "About"
 EVENT_SAVE_VGG16_FEATURES = "SAVE_VGG16_FEATURES"
+EVENT_MAKE_MOVIE = "MAKE_MOVIE"
 
 MENU = {
     "File": [
@@ -27,6 +28,7 @@ MENU = {
     "Options": [
         ("Update Patient Labels", EVENT_UPDATE_LABELS),
         ("Save VGG16 Features", EVENT_SAVE_VGG16_FEATURES),
+        ("Make Movie", EVENT_MAKE_MOVIE),
         ("Filter", EVENT_FILTER),
         (SEPARATOR, None),
         ("Filter", EVENT_FILTER),
@@ -91,6 +93,10 @@ class MainFrame(view.View):
             mri = self.getDocument().saveLabelsToDb()
         elif event == EVENT_SAVE_VGG16_FEATURES:
             self.getDocument().saveVGG16Features()
+        elif event == EVENT_MAKE_MOVIE:
+            self.getDocument().makeMovie()
+
+        ("Make Movie", EVENT_MAKE_MOVIE),
 
     def update(self):
         active_path = "No selection."

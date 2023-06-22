@@ -1,3 +1,7 @@
+import os
+import tempfile
+
+import cv2
 from tkinter.messagebox import askyesno
 
 import cogni_scan.constants as constants
@@ -49,6 +53,63 @@ class MRIDocument(document.Document):
     def saveVGG16Features(self):
         if self._patients:
             self._patients.saveVGG16Features()
+
+    def makeMovie(self, axis=0):
+        """Plays a video using the current MRI and the passed in axis."""
+        mri = self.getActiveMri()
+        if not mri:
+            return
+
+        base_dir = tempfile.gettempdir()
+
+        # Delete old movie files.
+        for item in os.listdir(base_dir):
+            if item.startswith("movie"):
+                os.remove(os.path.join(base_dir, item))
+
+        # Create the slices.
+        distance = -0.9
+        index = 0
+        step = 0.02
+
+        while distance < 1.0:
+            index += 1
+            filename = f"movie_slice_{index:02}.jpg"
+            filename = os.path.join(base_dir, filename)
+            img = mri.get_slice(
+                distance_from_center=distance,
+                axis=axis,
+                bounding_square=200
+            )
+            cv2.imwrite(filename, img)
+            distance += step
+
+        # Create the movie.
+        video_name =  os.path.join(base_dir, 'movie.avi')
+
+        images = [img for img in os.listdir(base_dir) if
+                  img.endswith(".jpg") and img.startswith("movie_slice")]
+        images.sort()
+        frame = cv2.imread(os.path.join(base_dir, images[0]))
+        height, width, layers = frame.shape
+        video = cv2.VideoWriter(video_name, 0, 5, (width, height))
+        for image in images:
+            video.write(cv2.imread(os.path.join(base_dir, image)))
+        cv2.destroyAllWindows()
+        video.release()
+
+        # Play the video.
+        cap = cv2.VideoCapture(video_name)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            cv2.imshow(video_name, frame)
+            if cv2.waitKey(150) == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
+
 
     def load(self, **kwargs):
         """Loads the documentDelete the document's data without destroying the object.."""

@@ -53,6 +53,8 @@ CREATE TABLE scan_features
     features_slice21 jsonb,
     features_slice22 jsonb,
     features_slice23 jsonb,
+    patient_id VARCHAR(512),
+    label VARCHAR(2)
     UNIQUE (scan_id)
 );
 

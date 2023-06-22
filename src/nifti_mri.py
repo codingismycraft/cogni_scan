@@ -108,6 +108,16 @@ _SQL_UPDATE_ONE = """
 
 _SQL_SELECT_SCANS_WITH_FEATURES = """select scan_id from scan_features"""
 
+_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES = """
+update scan_features a set patient_id=b.patiend_id 
+from scan b where a.scan_id=b.scan_id;
+"""
+
+_SQL_UPDATE_LABEL_IN_SCAN_FEATURES = """
+update scan_features a set label=b.label from 
+patient b where a.patient_id=b.patient_id;
+"""
+
 
 def int2HealthStatus(value):
     if value == 0:
@@ -295,7 +305,16 @@ class PatientCollection:
         return count
 
     def saveVGG16Features(self):
-        """Saves the VGG16 features for the selected set of patients."""
+        """Saves the VGG16 features for the selected set of patients.
+
+        Will save the VGG16 features for all the patients that are
+        marked as Valid, the already are selected from the front end thus
+        are existing on the self.__patients map and also do not have
+        pre-calculated their VGG16 features and stored them in the
+        database.
+
+        """
+
         for k, v in self.__patients.items():
             v.saveVGG16Features()
 
@@ -392,6 +411,10 @@ class Patient:
     def saveVGG16Features(self):
         """Saves the VGG16 features for all the scans of the patient."""
         for scan in self.__scans:
+            if scan.hasVGGFeatures():
+                continue
+            if scan.getValidationStatus() != constants.VALID_SCAN:
+                continue
             scan.saveVGG16Features()
 
 
