@@ -1,8 +1,8 @@
-"""Exposes the split_patients function.
+"""Exposes the makeDataset function.
 
-This function takes a list of patients represented by their IDs and splits them
-into three different subsets for training, validation, and testing. The subsets
-are created based on a given ratio, such as 70%, 15%, and 15% for training,
+This function splits the available in the scan_features db table into three
+different subsets for training, validation, and testing. The subsets are
+created based on a given ratio, such as 70%, 15%, and 15% for training,
 validation, and testing respectively.
 
 The patient data are stored directly from the database and then continues by
@@ -21,15 +21,10 @@ subset. For example, if the ratio is 70% for training, 15% for validation, and
 15% for testing, the function will allocate patients accordingly to achieve
 these proportions.
 
-The output of the function is stored in the database in a separate table that
-holds the patient ids, the corresponding subset that it belongs (train,
-validation, testing) and a name for the subset so these subsets can then be
-used for further processing or model creation.
-
-213 30 19
-304 28 17
-----------
-
+The output of the function is stored in the database  in a separate table
+(datasets) that holds the patient ids, the corresponding subset that it belongs
+(train, validation, testing) and a name for the subset so these subsets can
+then be used for further processing or model creation.
 """
 
 import json
@@ -84,6 +79,10 @@ def makeDataset(splits=None, balanced=True, name=None):
     train = train_1 + train_2
     val = val_1 + val_2
     test = test_1 + test_2
+
+    print(len(train))
+    print(len(val))
+    print(len(test))
 
     # Save the datasets to the database.
     name = _makeModelName(name)
