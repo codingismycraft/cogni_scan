@@ -4,7 +4,7 @@ import cogni_scan.src.impl.model_impl as model_impl
 import cogni_scan.src.impl.dataset_impl as dataset_impl
 
 
-def makeModel(name, slices):
+def makeNewModel(name, slices):
     """Create a new model based on the given name and slices.
 
     returns an instance of the IModel interface.

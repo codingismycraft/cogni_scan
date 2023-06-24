@@ -99,7 +99,6 @@ class IModel(abc.ABC):
         The dataset must be an instance of the Dataset interface and should be
         coming from the database table datasets.
         """
-        pass
 
     @abc.abstractmethod
     def saveToDb(self):
