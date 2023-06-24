@@ -69,6 +69,14 @@ class IModel(abc.ABC):
         """Returns the name of the model."""
 
     @abc.abstractmethod
+    def isTrained(self):
+        """Returns true if the model is trained."""
+
+    @abc.abstractmethod
+    def isDirty(self):
+        """Returns true if the model has unsaved changes."""
+
+    @abc.abstractmethod
     def getSlices(self):
         """Returns the slices used from the model.
 
