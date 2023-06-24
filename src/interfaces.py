@@ -14,8 +14,8 @@ class IDataset(abc.ABC):
         """Get the creation time of the dataset."""
 
     @abc.abstractmethod
-    def getStats(self):
-        """Get statistics of the dataset.
+    def getDescription(self):
+        """Get the description of the dataset.
 
         Returns:
             dict: A dictionary containing statistics of the dataset. This

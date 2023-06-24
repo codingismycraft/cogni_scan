@@ -10,8 +10,21 @@ import cogni_scan.src.interfaces as interfaces
 
 _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
 
+_SQL_LOAD_DATASETS = """
+Select 
+    name, created_at, training_scan_ids, validation_scan_ids, testing_scan_ids 
+from datasets 
+"""
 
-class Dataset(interfaces.IDataset):
+
+def getDatasets():
+    """Returns a list of all the databases from the database."""
+    dbo = dbutil.SimpleSQL()
+    with dbo as db:
+        return [_Dataset(*row) for row in db.execute_query(_SQL_LOAD_DATASETS)]
+
+
+class _Dataset(interfaces.IDataset):
     """Wrapper class for the dataset table.
 
     The dataset table contains distinct datasets holding training, validation
@@ -41,8 +54,8 @@ class Dataset(interfaces.IDataset):
         """Returns the creation time for he dataset."""
         return self.__created_at
 
-    def getStats(self):
-        """Returns statistical data for the dataset."""
+    def getDescription(self):
+        """Get the description of the dataset."""
         return copy.deepcopy(self.__stats)
 
     def getFeatures(self, slices):
