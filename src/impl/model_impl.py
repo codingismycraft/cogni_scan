@@ -2,6 +2,7 @@
 
 import cogni_scan.src.interfaces as interfaces
 
+
 def makeNewModel(name, slices):
     """Create a new model based on the given name and slices.
 
@@ -9,6 +10,13 @@ def makeNewModel(name, slices):
 
     raises: ValueError if the name already exists or invalid slices are passed.
     """
+    assert False, "Not implemented yet."
+
+
+def getModels():
+    """Returns a list of all the IModel instances from the database."""
+    assert False, "Not implemented yet."
+
 
 class _Model(interfaces.IModel):
     """Used to train, save and retrieve a NN model."""

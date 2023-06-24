@@ -11,10 +11,12 @@ def makeNewModel(name, slices):
 
     raises: ValueError if the name already exists or invalid slices are passed.
     """
+    return model_impl.makeNewModel(name, slices)
 
 
 def getModels():
     """Returns a list of all the IModel instances from the database."""
+    return model_impl.getModels()
 
 
 def getDatasets():
