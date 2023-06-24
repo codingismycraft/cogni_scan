@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 import cogni_scan.src.dbutil as dbutil
-import cogni_scan.src.interfaces as interfaces
+import cogni_scan.src.modeler.interfaces as interfaces
 
 _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
 
@@ -16,6 +16,21 @@ Select
 from datasets 
 """
 
+_SQL_LOAD_DATASET_BY_NAME = """
+Select 
+    name, created_at, training_scan_ids, validation_scan_ids, testing_scan_ids 
+from datasets 
+where name = '{name}'
+"""
+
+def getDatasetByName(name):
+    """Returns a dataset by its name."""
+    dbo = dbutil.SimpleSQL()
+    sql = _SQL_LOAD_DATASET_BY_NAME.format(name=name)
+    with dbo as db:
+        for row in db.execute_query(sql):
+            return _Dataset(*row)
+    raise ValueError(f"Could not find dataset: {name}.")
 
 def getDatasets():
     """Returns a list of all the databases from the database."""
@@ -50,7 +65,7 @@ class _Dataset(interfaces.IDataset):
         """Returns the name of the dataset."""
         return self.__name
 
-    def creationTime(self):
+    def getCreationTime(self):
         """Returns the creation time for he dataset."""
         return self.__created_at
 
@@ -101,8 +116,7 @@ class _Dataset(interfaces.IDataset):
             random.shuffle(val)
             random.shuffle(test)
 
-            if not is_valid:
-                raise ValueError(f"dataset: {name} not found.")
+            assert is_valid
 
             X_train = [self._getFeatures(d['scan_id'], db, slices) for d in
                        train]
@@ -155,14 +169,16 @@ class _Dataset(interfaces.IDataset):
         stats = {}
         distinct_patients = set()
 
+        total_scans = 0
         for d in collection:
             label = d['label']
             scan_id = d['scan_id']
             patient_id = self._getPatientIdFromScanId(scan_id)
+            total_scans +=1
             if label not in stats:
                 stats[label] = 1
                 stats[f'distinct_patients-{label}'] = set()
-                stats[f'distinct_patients-{label}'].add(patient_id)
+                stats[f'distinct_patients-{label}'] = set()
             else:
                 stats[label] += 1
                 stats[f'distinct_patients-{label}'].add(patient_id)
@@ -172,6 +188,7 @@ class _Dataset(interfaces.IDataset):
             if k.startswith('distinct_patients-'):
                 stats[k] = len(v)
         stats['distinct_patients'] = len(distinct_patients)
+        stats['total-scans'] = total_scans
 
         return stats
 
