@@ -6,12 +6,8 @@ class IDataset(abc.ABC):
     """Abstract base class for datasets."""
 
     @abc.abstractmethod
-    def getName(self):
-        """Returns the name of the dataset."""
-
-    @abc.abstractmethod
-    def getCreationTime(self):
-        """Get the creation time of the dataset."""
+    def getDatasetID(self):
+        """Returns the dataset_id of the dataset."""
 
     @abc.abstractmethod
     def getDescription(self):

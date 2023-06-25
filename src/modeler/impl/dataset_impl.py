@@ -12,25 +12,27 @@ _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
 
 _SQL_LOAD_DATASETS = """
 Select 
-    name, created_at, training_scan_ids, validation_scan_ids, testing_scan_ids 
+    dataset_id, training_scan_ids, validation_scan_ids, testing_scan_ids 
 from datasets 
 """
 
 _SQL_LOAD_DATASET_BY_NAME = """
 Select 
-    name, created_at, training_scan_ids, validation_scan_ids, testing_scan_ids 
+    dataset_id, training_scan_ids, validation_scan_ids, testing_scan_ids 
 from datasets 
-where name = '{name}'
+where dataset_id = '{dataset_id}'
 """
 
-def getDatasetByName(name):
+
+def getDatasetByID(dataset_id):
     """Returns a dataset by its name."""
     dbo = dbutil.SimpleSQL()
-    sql = _SQL_LOAD_DATASET_BY_NAME.format(name=name)
+    sql = _SQL_LOAD_DATASET_BY_NAME.format(dataset_id=dataset_id)
     with dbo as db:
         for row in db.execute_query(sql):
             return _Dataset(*row)
-    raise ValueError(f"Could not find dataset: {name}.")
+    raise ValueError(f"Could not find dataset: {dataset_id}.")
+
 
 def getDatasets():
     """Returns a list of all the databases from the database."""
@@ -52,22 +54,17 @@ class _Dataset(interfaces.IDataset):
     """
     _scan_pool = None  # class level map from scan_id to its patient id.
 
-    def __init__(self, name, created_at, train, val, test):
+    def __init__(self, dataset_id, train, val, test):
         """Initialize the dataset."""
-        self.__name = name
-        self.__created_at = created_at
+        self.__dataset_id = dataset_id
         self.__stats = self._makeStats(train, val, test)
 
     def __repr__(self):
-        return f"Dataset('{self.__name}')"
+        return f"Dataset('{self.__dataset_id}')"
 
-    def getName(self):
+    def getDatasetID(self):
         """Returns the name of the dataset."""
-        return self.__name
-
-    def getCreationTime(self):
-        """Returns the creation time for he dataset."""
-        return self.__created_at
+        return self.__dataset_id
 
     def getDescription(self):
         """Get the description of the dataset."""
@@ -105,7 +102,8 @@ class _Dataset(interfaces.IDataset):
 
         with dbo as db:
             sql = f"Select training_scan_ids, validation_scan_ids, " \
-                  f"testing_scan_ids from datasets where name='{self.__name}'"
+                  f"testing_scan_ids from datasets " \
+                  f"where dataset_id='{self.__dataset_id}'"
 
             is_valid = False
             for row in db.execute_query(sql):
@@ -174,7 +172,7 @@ class _Dataset(interfaces.IDataset):
             label = d['label']
             scan_id = d['scan_id']
             patient_id = self._getPatientIdFromScanId(scan_id)
-            total_scans +=1
+            total_scans += 1
             if label not in stats:
                 stats[label] = 1
                 stats[f'distinct_patients-{label}'] = set()
