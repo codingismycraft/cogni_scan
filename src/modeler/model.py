@@ -24,12 +24,12 @@ def getDatasets():
     return dataset_impl.getDatasets()
 
 
-def getDatasetByName(name):
-    """Returns a dataset by its name.
+def getDatasetByID(dataset_id):
+    """Returns a dataset by its ID.
 
     raises: ValueError if the dataset does not exist.
     """
-    return dataset_impl.getDatasetByName(name)
+    return dataset_impl.getDatasetByID(dataset_id)
 
 
 if __name__ == '__main__':

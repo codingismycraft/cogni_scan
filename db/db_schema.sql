@@ -60,22 +60,21 @@ CREATE TABLE scan_features
 
 create table datasets
 (
-    dataset_id serial primary key,
-    name VARCHAR(512),
-    created_at TIMESTAMP,
+    dataset_id uuid primary key,
     training_scan_ids jsonb,
     validation_scan_ids jsonb,
     testing_scan_ids jsonb,
-    UNIQUE (name)
+    created_at TIMESTAMP default NOW()
 );
 
 
 create table models
 (
     model_id uuid PRIMARY KEY,
-    created_at TIMESTAMP,
-    dataset_id integer,
-    descriptive_data jsonb
+    dataset_id uuid,
+    slices jsonb,
+    descriptive_data jsonb,
+    created_at TIMESTAMP default NOW()
 );
 
 \COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;

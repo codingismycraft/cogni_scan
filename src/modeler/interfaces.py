@@ -1,6 +1,8 @@
 """Defines the interfaces to use for the model managment."""
 import abc
 
+DEFAULT_MAX_EPOCHS = 120
+
 
 class IDataset(abc.ABC):
     """Abstract base class for datasets."""
@@ -65,16 +67,12 @@ class IModel(abc.ABC):
     """Used to train, save and retrieve a NN model."""
 
     @abc.abstractmethod
-    def getName(self):
+    def getModelID(self):
         """Returns the name of the model."""
 
     @abc.abstractmethod
     def isTrained(self):
         """Returns true if the model is trained."""
-
-    @abc.abstractmethod
-    def isDirty(self):
-        """Returns true if the model has unsaved changes."""
 
     @abc.abstractmethod
     def getSlices(self):
@@ -93,26 +91,18 @@ class IModel(abc.ABC):
         """
 
     @abc.abstractmethod
-    def getDatasetName(self):
-        """Returns the dataset name used for the model."""
+    def getDatasetID(self):
+        """Returns the dataset ID used for the model."""
 
     @abc.abstractmethod
-    def saveToDb(self):
-        """Saves the model to the database."""
-
-    @abc.abstractmethod
-    def train(self, dataset, slices):
-        """Train the model.
+    def trainAndSave(self, dataset, slices, max_epochs=DEFAULT_MAX_EPOCHS):
+        """Trains and saves the model.
 
         raises: ValueError
         """
 
     @abc.abstractmethod
-    def predict(self, X):
-        pass
-
-    @abc.abstractmethod
-    def getCunfusionMatrix(self):
+    def getConfusionMatrix(self):
         """Returns the confusion matrix of the model."""
 
     @abc.abstractmethod
@@ -122,3 +112,11 @@ class IModel(abc.ABC):
     @abc.abstractmethod
     def getROCCurve(self):
         """Returns the ROC curve of the model."""
+
+    @abc.abstractmethod
+    def getF1(self):
+        """Returns the F1 statistic for the model."""
+
+    @abc.abstractmethod
+    def getAccuracyScore(self):
+        """Returns the accuracy score statistic for the model."""

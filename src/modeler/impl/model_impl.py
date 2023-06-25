@@ -1,16 +1,25 @@
 """Implements the details of the model class."""
 
 import copy
+import json
+import os
+import pathlib
+import uuid
 
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
+import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.interfaces as interfaces
 
 _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
+
 
 def makeNewModel():
     """Create a new model based on the given name and slices.
@@ -24,46 +33,85 @@ def makeNewModel():
 
 def getModels():
     """Returns a list of all the IModel instances from the database."""
-    assert False, "Not implemented yet."
-
-
-def _getValidNextName(name):
-    """Returns a valid model name based on the passed in name.
-
-    Since models must have a unique name, if the name that the user is trying
-    to use already exists, then this function adds to it a default suffix;
-    called right before saving to the database.
-    """
+    with dbutil.SimpleSQL() as db:
+        sql = "select model_id, dataset_id, slices," \
+              " descriptive_data from models"
+        return [_Model(*row) for row in db.execute_query(sql)]
 
 
 class _Model(interfaces.IModel):
     """Used to train, save and retrieve a NN model."""
 
-    _name = "(not named yet)"
-    _is_trained = False
-    _is_dirty = False
+    _model_id = None
+    _dataset_id = None
     _slices = None
-    _dataset_name = None
-    _confusion_matrix = None
     _training_history = None
+    _confusion_matrix = None
     _roc_curve = None
+    _f1 = None
+    _accuracy_score = None
+    _roc_auc_score = None
     _model = None
+    _fpr = None
+    _tpr = None
+    _thresholds = None
+
+    def __init__(self, model_id=None,
+                 dataset_id=None, slices=None, descriptive_data=None):
+        """Initializes the Model object.
+
+        If the model_id is passed as None, this means that we need to create
+        a new instance, thus we will only assign a new model id and keep the
+        rest of the fields as None(s) until the user will train the model.
+
+        If non None values are passed then the model instance will be created
+        with these data but without loading the model weights (to keep the
+        size small); the weights will be loaded in the case that the user
+        will call the predict method.
+        """
+        self._model = None
+        if model_id is None:
+            # Build a new model.
+            self._model_id = str(uuid.uuid4())
+            self._clear()
+        else:
+            self._model_id = model_id
+            self._dataset_id = dataset_id
+            self._slices = slices
+            self._training_history = descriptive_data["training_history"]
+            self._f1 = descriptive_data["f1"]
+            self._accuracy_score = descriptive_data["accuracy_score"]
+            self._fpr = np.array(descriptive_data["fpr"])
+            self._tpr = np.array(descriptive_data["tpr"])
+            self._roc_auc_score = descriptive_data["roc_auc_score"]
+            self._thresholds = np.array(descriptive_data["thresholds"])
+
+    def _clear(self):
+        """Clears all the internal data (except the model id)."""
+        self._slices = None
+        self._dataset_id = None
+        self._training_history = None
+        self._confusion_matrix = None
+        self._roc_curve = None
+        self._f1 = None
+        self._accuracy_score = None
+        self._roc_auc_score = None
+        self._fpr = None
+        self._tpr = None
+        self._thresholds = None
+        self._model = None
 
     def __repr__(self):
         """String representation of the instance"""
-        return f"Model: {self._name}"
+        return f"Model: {self._model_id}"
 
-    def getName(self):
+    def getModelID(self):
         """Returns the name of the model."""
-        return self._name
+        return self._model_id
 
     def isTrained(self):
-        """Returns true if the model is trained."""
-        return self._is_trained
-
-    def isDirty(self):
-        """Returns true if the model has unsaved changes."""
-        return self._is_dirty
+        """Returns true if ready to make predictions."""
+        return self._model is not None
 
     def getSlices(self):
         """Returns the slices used from the model.
@@ -79,17 +127,64 @@ class _Model(interfaces.IModel):
                 11, 12, 13,
                 21, 22, 23
         """
-        return self._slices
+        return copy.deepcopy(self._slices)
 
-    def getDatasetName(self):
+    def getDatasetID(self):
         """Returns the dataset name used for the model."""
-        return self._dataset_name
+        return self._dataset_id
 
-    def saveToDb(self):
-        """Saves the model to the database."""
+    def _save(self):
+        """Saves the model to the database.
 
-    def train(self, dataset, slices, max_epochs=120):
-        """Train the model."""
+        The model weights is saved in the filesystem while its descriptive
+        data are stored in the datase.
+        """
+        assert self._model
+        self._saveWeights()
+        self._saveToDb()
+
+    def _saveToDb(self):
+        """Saves the descriptive data of the model to the database."""
+        dbo = dbutil.SimpleSQL()
+        with dbo as db:
+            sql = f"delete from models where model_id = '{self._model_id}'"
+            db.execute_non_query(sql)
+
+            desc_data = json.dumps(
+                {
+                    "training_history": self._training_history,
+                    "f1": self._f1,
+                    "accuracy_score": self._accuracy_score,
+                    "confusion_matrix": self._confusion_matrix.tolist(),
+                    "roc_auc_score": self._roc_auc_score,
+                    "fpr": self._fpr.tolist(),
+                    "tpr": self._tpr.tolist(),
+                    "thresholds": self._thresholds.tolist()
+                }
+            )
+
+            slices = json.dumps(self._slices)
+
+            sql = f"insert into models " \
+                  f"(model_id, dataset_id, slices, descriptive_data) " \
+                  f"values ('{self._model_id}', " \
+                  f"'{self.getDatasetID()}', '{slices}' , '{desc_data}' ) "
+
+            db.execute_non_query(sql)
+
+    def _saveWeights(self):
+        """Saves the model's weights as a file."""
+        home_dir = pathlib.Path.home()
+        cogni_scan_dir = os.path.join(home_dir, '.cogni_scan')
+        if not os.path.isdir(cogni_scan_dir):
+            os.mkdir(cogni_scan_dir)
+        full_path = os.path.join(cogni_scan_dir, f'{self._model_id}.h5')
+        self._model.save(full_path)
+
+    def trainAndSave(self, dataset, slices, max_epochs=120):
+        """Trains and save the model."""
+        # TODO: check how it behaves in the case of an exception..
+        self._clear()
         if not isinstance(dataset, interfaces.IDataset):
             raise ValueError
 
@@ -100,7 +195,9 @@ class _Model(interfaces.IModel):
             if slice not in _VALID_SLICES:
                 raise ValueError(f"Slice: {slice} is not supported.")
 
-        features = dataset.getFeatures(slices)
+        self._slices = slices
+
+        features = dataset.getFeatures(self._slices)
 
         X_train = features["X_train"]
         Y_train = features["Y_train"]
@@ -112,7 +209,7 @@ class _Model(interfaces.IModel):
         Y_test = features["Y_test"]
 
         self._model = tf.keras.Sequential()
-        self._model.add(tf.keras.layers.Input(len(slices) * 512))
+        self._model.add(tf.keras.layers.Input(len(self._slices) * 512))
         self._model.add(tf.keras.layers.Dense(1000, activation='relu'))
         self._model.add(tf.keras.layers.Dropout(0.3))
         self._model.add(tf.keras.layers.Dense(1000, activation='relu'))
@@ -146,28 +243,38 @@ class _Model(interfaces.IModel):
             # callbacks=[early_stoppping,reduce_lr_on_plateau],
             verbose=2
         )
+        self._dataset_id = dataset.getDatasetID()
+
         self._training_history = history.history
 
+        # Calculate the performance of the model.
         y_pred = self._model.predict(X_test)
-
         y_pred_bin = [1 if p[0] > 0.5 else 0 for p in y_pred]
 
-        conf_mat = confusion_matrix(Y_test, y_pred_bin)
-        f1 = f1_score(Y_test, y_pred_bin)
-        ac = accuracy_score(Y_test, y_pred_bin)
+        self._confusion_matrix = confusion_matrix(Y_test, y_pred_bin)
+        self._f1 = f1_score(Y_test, y_pred_bin)
+        self._accuracy_score = accuracy_score(Y_test, y_pred_bin)
+        self._roc_auc_score = roc_auc_score(Y_test, y_pred)
+        self._fpr, self._tpr, self._thresholds = roc_curve(Y_test, y_pred)
 
-        # Save to the database.
-        print("not implemented yet..")
 
-    def predict(self, X):
-        return self._model.predict(X)
+        self._save()
 
-    def getCunfusionMatrix(self):
+    def getConfusionMatrix(self):
         """Returns the confusion matrix of the model."""
+        return self._confusion_matrix
 
     def getTrainingHistory(self):
         """Returns the training history of the model."""
         return self._training_history
+
+    def getF1(self):
+        """Returns the F1 statistic for the model."""
+        return self._f1
+
+    def getAccuracyScore(self):
+        """Returns the accuracy score statistic for the model."""
+        return self._accuracy_score
 
     def getROCCurve(self):
         """Returns the ROC curve of the model."""
