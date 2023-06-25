@@ -10,7 +10,7 @@ class IDataset(abc.ABC):
         """Returns the name of the dataset."""
 
     @abc.abstractmethod
-    def creationTime(self):
+    def getCreationTime(self):
         """Get the creation time of the dataset."""
 
     @abc.abstractmethod
@@ -57,7 +57,11 @@ class IDataset(abc.ABC):
 
         The X values consist of numpy arrays in the form [n, k] where k
         is the number of scans and k is the representation of the features
-        for the scan as an array of numpy arrays: [  [..], [..] ... ].
+
+        Exceptions:
+
+        If the passed in slices are invlid (based on the previous description
+        then a ValueError is raised.
         """
 
 
@@ -93,20 +97,23 @@ class IModel(abc.ABC):
         """
 
     @abc.abstractmethod
-    def getDataset(self):
-        """Returns the dataset used for the model.
-
-        The dataset must be an instance of the Dataset interface and should be
-        coming from the database table datasets.
-        """
+    def getDatasetName(self):
+        """Returns the dataset name used for the model."""
 
     @abc.abstractmethod
     def saveToDb(self):
         """Saves the model to the database."""
 
     @abc.abstractmethod
-    def train(self):
-        """Train the model."""
+    def train(self, dataset, slices):
+        """Train the model.
+
+        raises: ValueError
+        """
+
+    @abc.abstractmethod
+    def predict(self, X):
+        pass
 
     @abc.abstractmethod
     def getCunfusionMatrix(self):

@@ -69,6 +69,15 @@ create table datasets
     UNIQUE (name)
 );
 
+
+create table models
+(
+    model_id uuid PRIMARY KEY,
+    created_at TIMESTAMP,
+    dataset_id integer,
+    descriptive_data jsonb
+);
+
 \COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 
 
