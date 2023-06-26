@@ -30,15 +30,25 @@ with the Oasis3 data.
 
 This command exports the data to a CSV file named `scan.csv` located in the `./cogni_scan/db/ directory.`
 
+## Run the following steps to sync the database.
+
+### Update the patient labels
+
+From the front end run the `Update Patient Labels` from the main menu.
+This command will update the the label (like HH or HD for example) for each 
+patient in the database.
+
 ### Saving the VGG16 Features
 
 To bring the database up to date with the valid scans is to spawn the related
-process from the CogniScan front end.  This process will automatically discover
-all the valid scans that are missing VGG16 features.  The process will
-calculate and save the missing VGG16 features automatically.
+process from the CogniScan front end: `Save VGG16 Features`
 
-### Datasets
+This process will automatically discover all the valid scans that are missing 
+VGG16 features.  The process will calculate and save the missing VGG16 
+features automatically.
 
+### Create at least one Dataset
 To create a dataset that will be used for model creation (having training, 
 validation, and testing data) you should run the `create_dataset.py` passing 
 the name of the database you need to use.
+

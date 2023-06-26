@@ -42,6 +42,10 @@ def getModels():
 class _Model(interfaces.IModel):
     """Used to train, save and retrieve a NN model."""
 
+    # Class level attributes.
+    _STORAGE_PATH = None
+
+    # Instance level attributes.
     _model_id = None
     _dataset_id = None
     _slices = None
@@ -105,6 +109,20 @@ class _Model(interfaces.IModel):
         """String representation of the instance"""
         return f"Model: {self._model_id}"
 
+    @classmethod
+    def getStorageDir(cls):
+        """Returns the path to the directory where modesls are stored."""
+        if cls._STORAGE_PATH:
+            return cls._STORAGE_PATH
+        else:
+            home_dir = pathlib.Path.home()
+            return os.path.join(home_dir, '.cogni_scan')
+
+    @classmethod
+    def setStorageDir(cls, dir_path):
+        """Sets the path to the directory where modesls are stored."""
+        cls._STORAGE_PATH = dir_path
+
     def getModelID(self):
         """Returns the name of the model."""
         return self._model_id
@@ -132,6 +150,17 @@ class _Model(interfaces.IModel):
     def getDatasetID(self):
         """Returns the dataset name used for the model."""
         return self._dataset_id
+
+    def reset(self):
+        """Deletes it from the database and from h4 and resets its state."""
+        if self._model:
+            with dbutil.SimpleSQL() as db:
+                sql = f"delete from models where model_id = '{self._model_id}'"
+                db.execute_non_query(sql)
+            fullpath = self._getStorageFullPath()
+            os.remove(fullpath)
+            self._model_id = str(uuid.uuid4())
+            self._clear()
 
     def _save(self):
         """Saves the model to the database.
@@ -172,13 +201,17 @@ class _Model(interfaces.IModel):
 
             db.execute_non_query(sql)
 
-    def _saveWeights(self):
-        """Saves the model's weights as a file."""
-        home_dir = pathlib.Path.home()
-        cogni_scan_dir = os.path.join(home_dir, '.cogni_scan')
+    def _getStorageFullPath(self):
+        """Returns the full path to the h5 file containing the weights."""
+        assert self._model_id
+        cogni_scan_dir = self.getStorageDir()
         if not os.path.isdir(cogni_scan_dir):
             os.mkdir(cogni_scan_dir)
-        full_path = os.path.join(cogni_scan_dir, f'{self._model_id}.h5')
+        return os.path.join(cogni_scan_dir, f'{self._model_id}.h5')
+
+    def _saveWeights(self):
+        """Saves the model's weights as a file."""
+        full_path = self._getStorageFullPath()
         self._model.save(full_path)
 
     def trainAndSave(self, dataset, slices, max_epochs=120):
@@ -256,7 +289,6 @@ class _Model(interfaces.IModel):
         self._accuracy_score = accuracy_score(Y_test, y_pred_bin)
         self._roc_auc_score = roc_auc_score(Y_test, y_pred)
         self._fpr, self._tpr, self._thresholds = roc_curve(Y_test, y_pred)
-
 
         self._save()
 

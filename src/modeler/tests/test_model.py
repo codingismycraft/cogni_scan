@@ -1,18 +1,34 @@
 """Tests the model class."""
 
+import os
+
 import pytest
 
+import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.model as model
+
+_DBNAME = 'dummyscans'
+_CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+_STORAGE_DIR = os.path.join(_CURRENT_DIR, 'dummystorage')
 
 
 def getExistingDatasetID():
+    """Returns the dataset ID for the first dataset."""
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dss = model.getDatasets()
     assert len(dss) > 0
     return dss[0].getDatasetID()
 
 
+def checkModelFileExists(m):
+    """Returns True if the weights for the passed in model exist."""
+    fullpath = os.path.join(_STORAGE_DIR, f'{m.getModelID()}.h5')
+    return os.path.isfile(fullpath)
+
+
 def test_new_model():
     """Tests the state of a new model."""
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     m = model.makeNewModel()
 
     assert not m.isTrained()
@@ -26,12 +42,14 @@ def test_new_model():
 
 def test_invalid_dataset():
     """Tests training while passing invalid dataset name."""
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     m = model.makeNewModel()
     with pytest.raises(ValueError):
         m.trainAndSave("", None)
 
 
 def test_invalid_slice_type():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     ds = model.getDatasetByID(getExistingDatasetID())
     m = model.makeNewModel()
     with pytest.raises(ValueError):
@@ -39,6 +57,7 @@ def test_invalid_slice_type():
 
 
 def test_invalid_slices():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     ds = model.getDatasetByID(getExistingDatasetID())
     m = model.makeNewModel()
     with pytest.raises(ValueError):
@@ -46,32 +65,40 @@ def test_invalid_slices():
 
 
 def test_get_slices():
-    models = model.getModels()
-    slices = models[0].getSlices()
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
+    count_before = len(model.getModels())
+    ds = model.getDatasetByID(getExistingDatasetID())
+    m = model.makeNewModel()
+    m.setStorageDir(_STORAGE_DIR)
+
+    # Train and save.
+    m.trainAndSave(ds, ["01"], max_epochs=1)
+    slices = m.getSlices()
     assert isinstance(slices, list)
 
-
-def test_get_dataset_id():
-    models = model.getModels()
-    m = models[0]
     dsid = m.getDatasetID()
     assert isinstance(dsid, str)
 
+    # Verify that it was saved to the database.
+    count_after = len(model.getModels())
+    assert count_after - count_before == 1
+
+    # Verify the the h5 file was created successfully.
+    assert checkModelFileExists(m)
+
+    # delete the model
+    m.reset()
+
+    # verify that it was deleted from the dataset.
+    count_after = len(model.getModels())
+    assert count_after == count_before
+
+    # Verify the the h5 file was deleted.
+    assert not checkModelFileExists(m)
+
 
 def test_repr():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     m = model.makeNewModel()
     s = str(m)
     assert m.getModelID() in s
-
-
-def test_train_and_save():
-    ds = model.getDatasetByID(getExistingDatasetID())
-    m = model.makeNewModel()
-    slices = ["01"]
-    m.trainAndSave(ds, slices, max_epochs=1)
-    print(m.getTrainingHistory())
-
-
-def test_get_models():
-    models = model.getModels()
-    assert isinstance(models, list)

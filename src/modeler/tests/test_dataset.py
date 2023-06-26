@@ -8,30 +8,35 @@ import uuid
 
 import pytest
 
-import cogni_scan.src.modeler.model as model
+import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.interfaces as interfaces
+import cogni_scan.src.modeler.model as model
 
-_DEAFAULT_DATASET_NAME = 'Dataset'
+_DBNAME = 'dummyscans'
 
 
 def getExistingDatasetID():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dss = model.getDatasets()
     assert len(dss) > 0
     return dss[0].getDatasetID()
 
 
 def test_getting_dataset_by_name():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     assert ds.getDatasetID() == dataset_id
 
 
 def test_invalid_dataset_id():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     with pytest.raises(ValueError):
         ds = model.getDatasetByID(uuid.uuid4())
 
 
 def test_getting_all_datasets():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dss = model.getDatasets()
     assert isinstance(dss, list)
     for ds in dss:
@@ -39,12 +44,14 @@ def test_getting_all_datasets():
 
 
 def test_get_by_patient_id():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     assert ds.getDatasetID() == dataset_id
 
 
 def test_get_description():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     desc = ds.getDescription()
@@ -52,6 +59,7 @@ def test_get_description():
 
 
 def test_get_features():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     features = ds.getFeatures(["01"])
@@ -59,6 +67,7 @@ def test_get_features():
 
 
 def test_invalid_slices():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     with pytest.raises(ValueError):
@@ -66,6 +75,7 @@ def test_invalid_slices():
 
 
 def test_repr():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     assert dataset_id in str(ds)

@@ -315,12 +315,12 @@ class PatientCollection:
         are existing on the self.__patients map and also do not have
         pre-calculated their VGG16 features and stored them in the
         database.
-
         """
-
-        for k, v in self.__patients.items():
-            v.saveVGG16Features()
-
+        with dbutil.SimpleSQL() as db:
+            for k, v in self.__patients.items():
+                v.saveVGG16Features(db)
+            db.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
+            db.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
 
 class Patient:
     """Holds the information about a patient.
@@ -411,22 +411,23 @@ class Patient:
         assert 0 <= index < len(self.__scans)
         return self.__scans[index]
 
-    def saveVGG16Features(self):
+    def saveVGG16Features(self, db):
         """Saves the VGG16 features for all the scans of the patient."""
-        with dbutil.SimpleSQL() as db:
-            for scan in self.__scans:
-                if scan.hasVGGFeatures():
-                    continue
-                if scan.getValidationStatus() != constants.VALID_SCAN:
-                    continue
-                scan.saveVGG16Features(db)
+        for scan in self.__scans:
+            if scan.hasVGGFeatures():
+                continue
+            if scan.getValidationStatus() != constants.VALID_SCAN:
+                continue
+            scan.saveVGG16Features(db)
 
 
 class Scan:
+    """Encapsulates all the details for an MRI scan."""
 
     def __init__(self, scan_id, fullpath, days, patient_id,
                  origin, health_status, axis, rotation, sd0, sd1, sd2,
                  validation_status):
+        """Intializer."""
         self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
@@ -649,9 +650,6 @@ class Scan:
         )
         print("Inserting to the database: ", self.__scan_id)
         db.execute_non_query(sql)
-        db.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
-        db.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
-
         # Keep the state of the instance low to avoid memory overloading.
         self.unloadImage()
 

@@ -70,6 +70,14 @@ class IModel(abc.ABC):
     def getModelID(self):
         """Returns the name of the model."""
 
+    @abc.abstractclassmethod
+    def getStorageDir(cls):
+        """Returns the path to the directory where modesls are stored."""
+
+    @abc.abstractclassmethod
+    def setStorageDir(cls, dir_path):
+        """Sets the path to the directory where modesls are stored."""
+
     @abc.abstractmethod
     def isTrained(self):
         """Returns true if the model is trained."""
@@ -100,6 +108,10 @@ class IModel(abc.ABC):
 
         raises: ValueError
         """
+
+    @abc.abstractmethod
+    def reset(self):
+        """Deletes it from the database and from h4 and resets its state."""
 
     @abc.abstractmethod
     def getConfusionMatrix(self):

@@ -30,15 +30,3 @@ def getDatasetByID(dataset_id):
     raises: ValueError if the dataset does not exist.
     """
     return dataset_impl.getDatasetByID(dataset_id)
-
-
-if __name__ == '__main__':
-    ds = getDatasetByName("Dataset")
-    for k, v in ds.getDescription().items():
-        print(k, v)
-
-# for ds in getDatasets():
-#     print(ds)
-#     for k, v in ds.getDescription().items():
-#         print(k, v)
-#     print(ds.getFeatures(['01']))
