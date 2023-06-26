@@ -1,2 +1,2 @@
-createdb scans;
-psql scans -f db_schema.sql
+createdb dummyscans;
+psql dummyscans -f db_schema.sql

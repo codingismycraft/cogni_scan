@@ -1,14 +1,13 @@
 CREATE TABLE scan
 (
     scan_id       SERIAL PRIMARY KEY,
+    patient_id    VARCHAR(512) NOT NULL,
     fullpath      VARCHAR(512) NOT NULL,
-    days          int          NOT NULL,
-    patiend_id    VARCHAR(512) NOT NULL,
+    days          int NOT NULL,
+    health_status int NOT NULL,       -- 0: healthy, 1: Mild 2: Demented
     origin        VARCHAR(512) NOT NULL, -- oasis2, oasis3, adni etc
-    skipit        int   default 0,       -- if 1 then it should be skipped for training.
-    health_status int   default 0,       -- 0: healthy, 1: Mild 2: Demented
-    axis          jsonb        NOT NULL,
-    rotation      jsonb        NOT NULL,
+    axis          jsonb default '{"0": 0, "1": 1, "2": 2}' NOT NULL,
+    rotation      jsonb default '[0, 0, 0]' NOT NULL,
     sd0           FLOAT default 0.2,     -- Slice Distance for first axis.
     sd1           FLOAT default 0.2,     -- Slice Distance for middle axis.
     sd2           FLOAT default 0.2,     -- Slice Distance for third axis.
@@ -16,15 +15,14 @@ CREATE TABLE scan
     UNIQUE (fullpath)
 );
 
--- update scan set skipit=1 where fullpath like ('%TSE%');
+\COPY scan (fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status ) FROM '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
+
 
 CREATE TABLE patient
 (
     patient_id VARCHAR(512) PRIMARY KEY,
     label      VARCHAR(2) NOT NULL
 );
-
-
 
 CREATE TABLE diagnosis
 (
@@ -35,6 +33,8 @@ CREATE TABLE diagnosis
     health_status int default 0,         -- 0: healthy, 1: Mild 2: Demented
     UNIQUE (patient_id, days)
 );
+
+\COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 
 -- stores VGG16 generated feautures
 CREATE TABLE scan_features
@@ -77,11 +77,8 @@ create table models
     created_at TIMESTAMP default NOW()
 );
 
-\COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
-
-
 -- To back the database:
--- \copy (SELECT * FROM scan) TO '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status  FROM scan) TO '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
 -- \copy (SELECT * FROM diagnosis) TO '/home/john/repos/cogni_scan/db/diagnosis.csv' DELIMITER ',' CSV HEADER;
 -- \copy (SELECT * FROM patient) TO '/home/john/repos/cogni_scan/db/patient.csv' DELIMITER ',' CSV HEADER;
--- \copy (SELECT skipit, is_valid FROM scan) TO '/home/john/repos/cogni_scan/db/valids.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT fullpath, validation_status FROM scan) TO '/home/john/repos/cogni_scan/db/validation_status.csv' DELIMITER ',' CSV HEADER;
