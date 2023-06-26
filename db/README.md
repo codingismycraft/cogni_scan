@@ -36,3 +36,9 @@ To bring the database up to date with the valid scans is to spawn the related
 process from the CogniScan front end.  This process will automatically discover
 all the valid scans that are missing VGG16 features.  The process will
 calculate and save the missing VGG16 features automatically.
+
+### Datasets
+
+To create a dataset that will be used for model creation (having training, 
+validation, and testing data) you should run the `create_dataset.py` passing 
+the name of the database you need to use.

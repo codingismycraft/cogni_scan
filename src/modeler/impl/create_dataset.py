@@ -29,7 +29,7 @@ values (
 _DEFAULT_SPLITS = 0.7, 0.15, 0.15
 
 
-def insertNewDatasetToDB(splits=None, balanced=True):
+def insertNewDatasetToDB(dbname, splits=None, balanced=True):
     """Splits the available scans to train, validation and testing subsets.
 
     The subsets are created based on a given ratio, such as 70%, 15%, and 15%
@@ -55,6 +55,7 @@ def insertNewDatasetToDB(splits=None, balanced=True):
     belongs (train, validation, testing) and a name for the subset so these
     subsets can then be used for further processing or model creation.
     """
+    dbutil.SimpleSQL.setDatabaseName(dbname)
     if splits is None:
         splits = _DEFAULT_SPLITS
 
@@ -89,7 +90,9 @@ def insertNewDatasetToDB(splits=None, balanced=True):
         testing_scan_ids=json.dumps(test)
     )
 
-    dbutil.execute_non_query(sql)
+    dbw = dbutil.SimpleSQL()
+    with dbw as db:
+        db.execute_non_query(sql)
 
 
 def _balanceDatasets(ds1, ds2):
@@ -158,4 +161,4 @@ def _getScansByPatientId(pid, db):
 
 
 if __name__ == '__main__':
-    insertNewDatasetToDB()
+    insertNewDatasetToDB("dummyscans")

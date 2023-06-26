@@ -55,11 +55,11 @@ def add_rgb_channels(imgs):
 
 _SQL_SELECT_ALL = """
 select
-    scan_id, fullpath, days, patiend_id, origin, health_status, 
+    scan_id, fullpath, days, patient_id, origin, health_status, 
     axis, rotation, sd0, sd1, sd2, validation_status
 from
     scan
-order by patiend_id, days, scan_id
+order by patient_id, days, scan_id
 """
 
 _SQL_SELECT_EXIT_HEALTH_STATUS = """
@@ -70,7 +70,7 @@ where a.patient_id = b.patient_id and a.days = b.days;
 
 _SQL_SELECT_ONE = """
 select
-    scan_id, fullpath, days, patiend_id, origin, health_status, 
+    scan_id, fullpath, days, patient_id, origin, health_status, 
     axis, rotation, sd0, sd1, sd2, validation_status
 from
     scan
@@ -110,7 +110,7 @@ _SQL_UPDATE_ONE = """
 _SQL_SELECT_SCANS_WITH_FEATURES = """select scan_id from scan_features"""
 
 _SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES = """
-update scan_features a set patient_id=b.patiend_id 
+update scan_features a set patient_id=b.patient_id 
 from scan b where a.scan_id=b.scan_id;
 """
 
@@ -159,83 +159,85 @@ class PatientCollection:
         self.__mri_id_to_mri = {}
         self.__was_loaded = False
 
-        if show_status is None:
-            show_status = constants.ALL_SCANS
+        with dbutil.SimpleSQL() as db:
+            if show_status is None:
+                show_status = constants.ALL_SCANS
 
-        # Load the scan ids that have VGG features in the database.
-        having_vgg_features = set()
-        for row in dbutil.execute_query(_SQL_SELECT_SCANS_WITH_FEATURES):
-            scan_id = row[0]
-            having_vgg_features.add(scan_id)
+            # Load the scan ids that have VGG features in the database.
+            having_vgg_features = set()
+            for row in db.execute_query(_SQL_SELECT_SCANS_WITH_FEATURES):
+                scan_id = row[0]
+                having_vgg_features.add(scan_id)
 
-        for row in dbutil.execute_query(_SQL_SELECT_ALL):
-            (scan_id, fullpath, days, patient_id, origin,
-             health_status, axis, rotation, sd0, sd1, sd2,
-             status) = row
+            for row in db.execute_query(_SQL_SELECT_ALL):
+                (scan_id, fullpath, days, patient_id, origin,
+                 health_status, axis, rotation, sd0, sd1, sd2,
+                 status) = row
 
-            if show_status != constants.ALL_SCANS and status != show_status:
-                continue
+                if show_status != constants.ALL_SCANS and status != show_status:
+                    continue
 
-            if patient_id not in self.__patients:
-                self.__patients[patient_id] = Patient(patient_id)
+                if patient_id not in self.__patients:
+                    self.__patients[patient_id] = Patient(patient_id)
 
-            scan = Scan(scan_id, fullpath, days, patient_id, origin,
-                        health_status, axis, rotation, sd0, sd1, sd2, status)
+                scan = Scan(scan_id, fullpath, days, patient_id, origin,
+                            health_status, axis, rotation, sd0, sd1, sd2, status)
 
-            # Set the has VGG features if needed.
-            if scan.getScanID() in having_vgg_features:
-                scan.setToHasVGGFeatures()
+                # Set the has VGG features if needed.
+                if scan.getScanID() in having_vgg_features:
+                    scan.setToHasVGGFeatures()
 
-            self.__patients[patient_id].addScan(scan)
-            self.__mri_id_to_mri[scan.getScanID()] = scan
+                self.__patients[patient_id].addScan(scan)
+                self.__mri_id_to_mri[scan.getScanID()] = scan
 
-        # Assign the exit health status to all the patients.
-        for row in dbutil.execute_query(_SQL_SELECT_EXIT_HEALTH_STATUS):
-            patient_id, health_status = row
-            if patient_id in self.__patients:
-                self.__patients[patient_id].setExitHealthStatus(health_status)
+            # Assign the exit health status to all the patients.
+            for row in db.execute_query(_SQL_SELECT_EXIT_HEALTH_STATUS):
+                patient_id, health_status = row
+                if patient_id in self.__patients:
+                    self.__patients[patient_id].setExitHealthStatus(health_status)
 
-        if show_only_healthy:
-            for _, v in self.__patients.items():
-                v.keepOnlyHealthyScans()
+            if show_only_healthy:
+                for _, v in self.__patients.items():
+                    v.keepOnlyHealthyScans()
 
-        # Filter by selected label (like HH or HD for example).
-        if show_labels != "ALL":
-            labels = show_labels.split("-")
+            # Filter by selected label (like HH or HD for example).
+            if show_labels != "ALL":
+                labels = show_labels.split("-")
+                temp = {}
+                for k, v in self.__patients.items():
+                    l = v.getLabel()
+                    if v.getLabel() in labels:
+                        temp[k] = v
+                self.__patients = temp
+
+            # Remove all patients with no scans.
             temp = {}
             for k, v in self.__patients.items():
-                l = v.getLabel()
-                if v.getLabel() in labels:
+                if v.numberOfScans() > 0:
                     temp[k] = v
             self.__patients = temp
 
-        # Remove all patients with no scans.
-        temp = {}
-        for k, v in self.__patients.items():
-            if v.numberOfScans() > 0:
-                temp[k] = v
-        self.__patients = temp
-
-        self.__was_loaded = True
+            self.__was_loaded = True
 
     def saveLabelsToDb(self):
         """Stores the labels (like HH or HD) to the database."""
-        dbutil.execute_non_query("delete from patient")
-        for patient_id, patient in self.__patients.items():
-            label = patient.getLabel()
-            sql = f"INSERT INTO " \
-                  f"patient (patient_id,label) values" \
-                  f"('{patient_id}', '{label}')"
-            print(sql)
-            dbutil.execute_non_query(sql)
+        with dbutil.SimpleSQL() as db:
+            db.execute_non_query("delete from patient")
+            for patient_id, patient in self.__patients.items():
+                label = patient.getLabel()
+                sql = f"INSERT INTO " \
+                      f"patient (patient_id,label) values" \
+                      f"('{patient_id}', '{label}')"
+                print(sql)
+                db.execute_non_query(sql)
 
-    def getPatient(self, patiend_id):
+    def getPatient(self, patient_id):
         """Returns a patient object for the passed in patient id."""
         if not self.__was_loaded:
             self.loadFromDb()
         assert self.__was_loaded
-        if patiend_id in self.__patients:
-            return self.__patients[patiend_id]
+        if patient_id in self.__patients:
+            return self.__patients[patient_id]
         else:
             raise ValueError
 
@@ -244,8 +246,8 @@ class PatientCollection:
         if not self.__was_loaded:
             self.loadFromDb()
         assert self.__was_loaded
-        for patiend_id, patient in self.__patients.items():
-            yield patiend_id, patient.getTitle()
+        for patient_id, patient in self.__patients.items():
+            yield patient_id, patient.getTitle()
 
     def getMrisByPatient(self, patient_id):
         """Yields the MRIS for the passed in patient."""
@@ -411,12 +413,13 @@ class Patient:
 
     def saveVGG16Features(self):
         """Saves the VGG16 features for all the scans of the patient."""
-        for scan in self.__scans:
-            if scan.hasVGGFeatures():
-                continue
-            if scan.getValidationStatus() != constants.VALID_SCAN:
-                continue
-            scan.saveVGG16Features()
+        with dbutil.SimpleSQL() as db:
+            for scan in self.__scans:
+                if scan.hasVGGFeatures():
+                    continue
+                if scan.getValidationStatus() != constants.VALID_SCAN:
+                    continue
+                scan.saveVGG16Features(db)
 
 
 class Scan:
@@ -457,8 +460,10 @@ class Scan:
         Re-Loads the details of the MRI from the database.
         """
         sql = _SQL_SELECT_ONE(scan_id=self.__scan_id)
-        for row in dbutil.execute_query(sql):
-            self.__init__(*row)
+
+        with dbutil.SimpleSQL() as db:
+            for row in db.execute_query(sql):
+                self.__init__(*row)
 
     def saveToDb(self):
         sd0, sd1, sd2 = self.__slice_distances
@@ -473,7 +478,8 @@ class Scan:
             sd2=sd2,
             validation_status=self.__validation_status
         )
-        dbutil.execute_non_query(sql)
+        with dbutil.SimpleSQL() as db:
+            db.execute_non_query(sql)
         self.__is_dirty = False
 
     def getScanID(self):
@@ -574,6 +580,10 @@ class Scan:
     def axis_mapping(self):
         return self.__axis_mapping.copy()
 
+    def unloadImage(self):
+        """Manually unloads the nifti image (used to avoid memory leaks)."""
+        self.__img = None
+
     def get_slice(self, distance_from_center=0, axis=2, bounding_square=300):
         if self.__img is None:
             self.__img = nib.load(self.__filepath).get_fdata()
@@ -618,7 +628,7 @@ class Scan:
         x_offset:x_offset + s_img.shape[1]] = s_img
         return l_img
 
-    def saveVGG16Features(self):
+    def saveVGG16Features(self, db):
         print(self.__scan_id)
         scan_id = self.__scan_id
         d0, d1, d2 = self.__slice_distances
@@ -637,11 +647,13 @@ class Scan:
         sql = _SQL_INSERT_FEATURES.format(
             scan_id, d0, d1, d2, *features
         )
-
         print("Inserting to the database: ", self.__scan_id)
-        dbutil.execute_non_query(sql)
-        dbutil.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
-        dbutil.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
+        db.execute_non_query(sql)
+        db.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
+        db.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
+
+        # Keep the state of the instance low to avoid memory overloading.
+        self.unloadImage()
 
 
 if __name__ == '__main__':
