@@ -4,10 +4,13 @@ import functools
 import os
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.metrics import RocCurveDisplay
 from tkinter import *
 from tkinter.messagebox import askyesno
+import matplotlib.pyplot as plt
+import numpy as np
 import tkinter as tk
 import tkinter.simpledialog
 import tkinter.ttk as ttk
@@ -19,6 +22,55 @@ import cogni_scan.src.modeler.model as model
 
 class ModelViewer:
 
+    def plot_history(self, history, image_holder):
+        """Plots the passed in model training history object.
+
+        :param history: Holds the model's training history.
+        """
+        return
+
+        root = image_holder
+
+        plt.rcParams["figure.figsize"] = [7.50, 3.50]
+        plt.rcParams["figure.autolayout"] = True
+        overlapping = 0.150
+        line1 = plt.plot([1, 3, 5, 2, 5, 3, 1], c='red', alpha=overlapping,
+                         lw=5)
+        line2 = plt.plot([7, 2, 5, 7, 5, 2, 7], c='green', alpha=overlapping,
+                         lw=5)
+        canvas = FigureCanvasTkAgg(plt.figure_, master=root)  # A tk.DrawingArea.
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
+                                    expand=1)
+        return
+
+        fig = Figure(figsize=(5, 4), dpi=100)
+        t = np.arange(0, 3, .01)
+        fig.add_subplot(121).plot(t, 2 * np.sin(2 * np.pi * t))
+        fig.add_subplot(122).plot(t, 3 * np.sin(2 * np.pi * t))
+
+        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
+                                    expand=1)
+        return
+        plt.clf()
+        min_value, max_value = 1000, 0
+        for key in history.keys():
+            plt.plot(history[key], label=key)
+            min_value = min(min_value, min(history[key]))
+            max_value = max(max_value, max(history[key]))
+
+        plt.ylim([0, max_value])
+        plt.xlabel('Epoch')
+        plt.ylabel('Error')
+        plt.legend()
+        plt.grid(True)
+
+        canvas = FigureCanvasTkAgg(fig.figure_, master=image_holder)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tkinter.LEFT)
+
     def callback(self, event):
         for widget in self._right_frame.winfo_children():
             widget.destroy()
@@ -27,132 +79,97 @@ class ModelViewer:
             index = selection[0]
             model_id = event.widget.get(index)
             active_model = self._model_map[model_id]
+
+            # Add labels.
+            labels_holder = Canvas(
+                self._right_frame,
+                bg=settings.LABEL_BACKGROUND_COLOR,
+                height=50,
+                highlightthickness=0,
+            )
+
+            labels_holder.grid(row=0, column=0, sticky=W)
+
+            labels = []
+            values = []
+
+            labels.append(
+                tk.Label(
+                    labels_holder, text="Accuracy",
+                    bg=settings.LABEL_BACKGROUND_COLOR,
+                    fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10)
+            )
+
+            txt = f"{active_model.getAccuracyScore():0.02}"
+            values.append(
+                tk.Label(labels_holder, text=txt,
+                         bg=settings.LABEL_BACKGROUND_COLOR,
+                         fg=settings.VALUE_FRONT_COLOR,
+                         font=('Helvetica', 12, 'bold'))
+            )
+
+            labels.append(
+                tk.Label(
+                    labels_holder, text="F1",
+                    bg=settings.LABEL_BACKGROUND_COLOR,
+                    fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10)
+            )
+
+            txt = f"{active_model.getF1():0.02}"
+            values.append(
+                tk.Label(labels_holder, text=txt,
+                         bg=settings.LABEL_BACKGROUND_COLOR,
+                         fg=settings.VALUE_FRONT_COLOR,
+                         font=('Helvetica', 12, 'bold'))
+            )
+
+            slices = '-'.join(active_model.getSlices())
+
+            labels.append(
+                tk.Label(
+                    labels_holder, text="Slices",
+                    bg=settings.LABEL_BACKGROUND_COLOR,
+                    fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10)
+            )
+
+            values.append(
+                tk.Label(labels_holder, text=slices,
+                         bg=settings.LABEL_BACKGROUND_COLOR,
+                         fg=settings.VALUE_FRONT_COLOR,
+                         font=('Helvetica', 12, 'bold'))
+            )
+
+            column = 0
+            for label, value in zip(labels, values):
+                label.grid(row=0, column=column, sticky=W)
+                column += 1
+                value.grid(row=0, column=column, sticky=W)
+                column += 1
+
+            # Add images.
+            image_holder = Canvas(self._right_frame,
+                                  bg=settings.TOP_BACKGROUND_COLOR,
+                                  highlightthickness=0)
+            image_holder.grid(row=1, column=0)
+
+            # Adds the confusion Matrix.
             cm = active_model.getConfusionMatrix()
             fig = ConfusionMatrixDisplay(cm).plot()
 
-            canvas = FigureCanvasTkAgg(fig.figure_,
-                                       master=self._right_frame)  # A tk.DrawingArea.
+            canvas = FigureCanvasTkAgg(fig.figure_, master=image_holder)
             canvas.draw()
-            canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
-                                        expand=1)
+            canvas.get_tk_widget().pack(side=tkinter.LEFT)
 
+            # Adds the ROC Curve.
             fpr, tpr = active_model.getROCCurve()
             roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
 
             canvas_1 = FigureCanvasTkAgg(roc_display.figure_,
-                                       master=self._right_frame)  # A tk.DrawingArea.
+                                         master=image_holder)
             canvas_1.draw()
-            canvas_1.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
-                                        expand=1)
+            canvas_1.get_tk_widget().pack(side=tkinter.LEFT)
 
-            return
-            canvas_1 = Canvas(self._right_frame,
-                              height=90,
-                              bg=settings.TOP_BACKGROUND_COLOR,
-                              highlightthickness=0)
-
-            for widget in self._right_frame.winfo_children():
-                widget.destroy()
-
-            canvas_1 = Canvas(self._right_frame,
-                              height=90,
-                              bg=settings.TOP_BACKGROUND_COLOR,
-                              highlightthickness=0)
-            canvas_1.grid(row=0, column=0)
-
-            canvas_col = 0
-            canvas_row = 0
-            for title, properties in ds.getDescription().items():
-                canvas = Canvas(canvas_1,
-                                height=90,
-                                bg=settings.TOP_BACKGROUND_COLOR,
-                                highlightthickness=0)
-
-                canvas.grid(row=canvas_row, column=canvas_col, padx=4)
-                canvas_col += 1
-
-                title_label = tk.Label(canvas, text=title.upper(),
-                                       bg='black',
-                                       fg='white',
-                                       pady=4)
-
-                title_label.grid(row=0, column=0, sticky=EW)
-                labels = []
-                values = []
-                for k, v in properties.items():
-                    labels.append(
-                        tk.Label(canvas, text=k,
-                                 bg=settings.LABEL_BACKGROUND_COLOR,
-                                 fg=settings.LABEL_FRONT_COLOR, padx=4,
-                                 pady=4)
-                    )
-                    values.append(tk.Label(canvas, text=str(v),
-                                           bg=settings.LABEL_BACKGROUND_COLOR,
-                                           fg=settings.VALUE_FRONT_COLOR,
-                                           font=('Helvetica', 12, 'bold')))
-                    for row, label in enumerate(labels):
-                        label.grid(row=row + 1, column=0, sticky=W)
-                    for row, label in enumerate(values):
-                        label.grid(row=row + 1, column=1, sticky=W)
-
-            def getSelectedLabels():
-                labels = []
-                for k, v in cb_vars.items():
-                    if v.get() == 1:
-                        labels.append(k)
-                return labels
-
-            def createModelClicked():
-                if not askyesno(
-                        title='Build New Model',
-                        message='Are you sure you want to build a new model?'):
-                    return
-
-                self._root.config(cursor="watch")
-                self._root.update()
-                labels = getSelectedLabels()
-                new_model = model.makeNewModel()
-                new_model.trainAndSave(ds, labels)
-                self._root.config(cursor="")
-                print("done")
-
-            def updateButtonState():
-                if len(getSelectedLabels()) > 0:
-                    create_model_button["state"] = "normal"
-                else:
-                    create_model_button["state"] = "disabled"
-
-            canvas_2 = Canvas(self._right_frame,
-                              height=90,
-                              bg=settings.RIGHT_BACKGROUND_COLOR,
-                              highlightthickness=0)
-            canvas_2.grid(row=2, column=0, sticky=W, pady=10)
-
-            cb_vars = {}
-            for row, i in enumerate([1, 2, 3]):
-                for col, j in enumerate([0, 1, 2]):
-                    txt = f'{j}{i}'
-                    cb_vars[txt] = tk.IntVar()
-                    cb = tk.Checkbutton(
-                        canvas_2,
-                        text=txt,
-                        variable=cb_vars[txt],
-                        onvalue=1,
-                        offvalue=0,
-                        command=updateButtonState
-                    )
-                    cb.grid(row=row, column=col)
-
-            canvas_3 = Canvas(self._right_frame,
-                              height=90,
-                              bg=settings.RIGHT_BACKGROUND_COLOR,
-                              highlightthickness=0)
-            canvas_3.grid(row=3, column=0, sticky=W, pady=10)
-            create_model_button = Button(canvas_3, text="Create Model",
-                                         command=createModelClicked)
-            create_model_button.grid(row=0, column=1, sticky=W)
-
-            updateButtonState()
+            self.plot_history(None, image_holder)
 
     def main(self, title="n/a", menu=None, width=710, height=340, upperX=200,
              upperY=100, zoomed=False):
