@@ -82,6 +82,7 @@ class _Model(interfaces.IModel):
             self._model_id = model_id
             self._dataset_id = dataset_id
             self._slices = slices
+            self._confusion_matrix = np.array(descriptive_data["confusion_matrix"])
             self._training_history = descriptive_data["training_history"]
             self._f1 = descriptive_data["f1"]
             self._accuracy_score = descriptive_data["accuracy_score"]
@@ -310,3 +311,4 @@ class _Model(interfaces.IModel):
 
     def getROCCurve(self):
         """Returns the ROC curve of the model."""
+        return self._fpr, self._tpr
