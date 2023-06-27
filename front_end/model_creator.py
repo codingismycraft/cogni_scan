@@ -66,7 +66,7 @@ class ModelCreator:
                     for row, label in enumerate(values):
                         label.grid(row=row + 1, column=1, sticky=W)
 
-            def getSelectedLabels():
+            def getSelectedSlices():
                 labels = []
                 for k, v in cb_vars.items():
                     if v.get() == 1:
@@ -81,14 +81,14 @@ class ModelCreator:
 
                 self._root.config(cursor="watch")
                 self._root.update()
-                labels = getSelectedLabels()
+                slices = getSelectedSlices()
                 new_model = model.makeNewModel()
-                new_model.trainAndSave(ds, labels)
+                new_model.trainAndSave(ds, slices)
                 self._root.config(cursor="")
                 print("done")
 
             def updateButtonState():
-                if len(getSelectedLabels()) > 0:
+                if len(getSelectedSlices()) > 0:
                     create_model_button["state"] = "normal"
                 else:
                     create_model_button["state"] = "disabled"
