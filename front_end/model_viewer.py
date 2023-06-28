@@ -28,9 +28,9 @@ class ModelViewer:
         :param history: Holds the model's training history.
         """
         parent_canvas = Canvas(image_holder,
-                              bg=settings.TOP_BACKGROUND_COLOR,
-                                width=200,
-                              highlightthickness=0)
+                               bg=settings.TOP_BACKGROUND_COLOR,
+                               width=200,
+                               highlightthickness=0)
         parent_canvas.grid(row=row, column=column)
 
         history = active_model.getTrainingHistory()
@@ -83,13 +83,10 @@ class ModelViewer:
     def callback(self, event):
         for widget in self._right_frame.winfo_children():
             widget.destroy()
-        selection = event.widget.curselection()
-        if selection:
-            index = selection[0]
-            model_id = event.widget.get(index)
-            active_model = self._model_map[model_id]
-
+        model_id = event.widget.focus()
+        if model_id:
             # Add labels.
+            active_model = self._model_map[model_id]
             labels_holder = Canvas(
                 self._right_frame,
                 bg=settings.LABEL_BACKGROUND_COLOR,
@@ -164,7 +161,7 @@ class ModelViewer:
             row, column = 0, 0
 
             self.plotConfusionMatrix(active_model, image_holder, row, column)
-            column +=1
+            column += 1
 
             self.plotROCCurve(active_model, image_holder, row, column)
 
@@ -172,9 +169,9 @@ class ModelViewer:
             column = 0
 
             self.plotTrainingHistory(active_model, image_holder, row, column)
-            column +=1
+            column += 1
 
-    def main(self, title="n/a", menu=None, width=1710, height=940, upperX=200,
+    def main(self, title="n/a", menu=None, width=1810, height=1040, upperX=200,
              upperY=100, zoomed=False):
         self._root = tk.Tk()
         self._root.title("Model Viewer (all available models).")
@@ -215,15 +212,74 @@ class ModelViewer:
 
         panedwindow.add(self._right_frame)
 
-        Lb1 = Listbox(self._left_frame)
+        self.scrollbar = ttk.Scrollbar(self._left_frame)
+        self.scrollbar.pack(side="right", fill="y")
+
+        # Treeview
+        self._treeview = ttk.Treeview(
+            self._left_frame,
+            selectmode="browse",
+            yscrollcommand=self.scrollbar.set,
+            columns=(1, 2, 3, 4),
+            height=10,
+        )
+        self._treeview.pack(fill=tk.BOTH, expand=True)
+        self.scrollbar.config(command=self._treeview.yview)
+
+        # Treeview columns
+        self._treeview.column("#0", anchor="w", width=120)
+        self._treeview.column(1, anchor="e", width=120)
+        self._treeview.column(2, anchor="e", width=80)
+        self._treeview.column(3, anchor="e", width=80)
+        self._treeview.column(4, anchor="e", width=80)
+
+        # Treeview headings
+        self._treeview.heading("#0", text="ID", anchor="center")
+        self._treeview.heading(1, text="Slices", anchor="center")
+        self._treeview.heading(2, text="Accuracy", anchor="center")
+        self._treeview.heading(3, text="F1", anchor="center")
+
+        treeview_data = []
         all_models = model.getModels()
+
         for index, m in enumerate(all_models):
-            Lb1.insert(index + 0, m.getModelID())
+            f1 = f"{m.getF1():0.02}"
+            accuracy = f"{m.getAccuracyScore():0.02}"
+            treeview_data.append(
+                ("",
+                 m.getModelID()[:8],
+                 (
+                     str(m.getSlices()),
+                     accuracy,
+                     f1
+                 ))
+            )
 
-        self._model_map = {m.getModelID(): m for m in all_models}
+        # Insert treeview data
+        for item in treeview_data:
+            self._treeview.insert(
+                parent=item[0], index="end", iid=item[1], text=item[1],
+                values=item[2]
+            )
 
-        Lb1.pack(fill=tk.BOTH, expand=True)
-        Lb1.bind("<<ListboxSelect>>", self.callback)
+        self._treeview.bind('<<TreeviewSelect>>', self.callback)
+
+        all_models = model.getModels()
+        self._model_map = {m.getModelID()[:8]: m for m in all_models}
+
+        # Select and scroll
+        # self.treeview.selection_set(1)
+        # self.treeview.see(1)
+
+        # Lb1 = Listbox(self._left_frame)
+        # all_models = model.getModels()
+        # for index, m in enumerate(all_models):
+        #     Lb1.insert(index + 0, m.getModelID())
+        #
+        # self._model_map = {m.getModelID(): m for m in all_models}
+        #
+        # Lb1.pack(fill=tk.BOTH, expand=True)
+        # Lb1.bind("<<ListboxSelect>>", self.callback)
 
         # Add the right view.
         self._root.geometry(f"{width}x{height}+{upperX}+{upperY}")
