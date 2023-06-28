@@ -22,11 +22,18 @@ import cogni_scan.src.modeler.model as model
 
 class ModelViewer:
 
-    def plotTrainingHistory(self, history, image_holder):
+    def plotTrainingHistory(self, active_model, image_holder, row, column):
         """Plots the passed in model training history object.
 
         :param history: Holds the model's training history.
         """
+        parent_canvas = Canvas(image_holder,
+                              bg=settings.TOP_BACKGROUND_COLOR,
+                                width=200,
+                              highlightthickness=0)
+        parent_canvas.grid(row=row, column=column)
+
+        history = active_model.getTrainingHistory()
         fig, ax1 = plt.subplots()
         min_value, max_value = 1000, 0
         for key in history.keys():
@@ -39,10 +46,39 @@ class ModelViewer:
         plt.ylabel('Error')
         plt.legend()
         plt.grid(True)
-        canvas = FigureCanvasTkAgg(fig, master=image_holder)
+        canvas = FigureCanvasTkAgg(fig, master=parent_canvas)
         canvas.draw()
         canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
                                     expand=1)
+
+    def plotConfusionMatrix(self, active_model, parent, row, column):
+        """Plots the confusion matrix"""
+        parent_canvas = Canvas(parent,
+                               bg=settings.TOP_BACKGROUND_COLOR,
+                               width=200,
+                               highlightthickness=0)
+        parent_canvas.grid(row=row, column=column)
+
+        cm = active_model.getConfusionMatrix()
+        fig = ConfusionMatrixDisplay(cm).plot()
+        canvas = FigureCanvasTkAgg(fig.figure_, master=parent_canvas)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tkinter.LEFT)
+
+    def plotROCCurve(self, active_model, parent, row, column):
+        parent_canvas = Canvas(parent,
+                               width=200,
+                               bg=settings.TOP_BACKGROUND_COLOR,
+                               highlightthickness=0)
+        parent_canvas.grid(row=row, column=column)
+        # Adds the ROC Curve.
+        fpr, tpr = active_model.getROCCurve()
+        roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+
+        canvas_1 = FigureCanvasTkAgg(roc_display.figure_,
+                                     master=parent_canvas)
+        canvas_1.draw()
+        canvas_1.get_tk_widget().pack(side=tkinter.LEFT)
 
     def callback(self, event):
         for widget in self._right_frame.winfo_children():
@@ -125,29 +161,23 @@ class ModelViewer:
                                   highlightthickness=0)
             image_holder.grid(row=1, column=0)
 
-            # Adds the confusion Matrix.
-            cm = active_model.getConfusionMatrix()
-            fig = ConfusionMatrixDisplay(cm).plot()
+            row, column = 0, 0
 
-            canvas = FigureCanvasTkAgg(fig.figure_, master=image_holder)
-            canvas.draw()
-            canvas.get_tk_widget().pack(side=tkinter.LEFT)
+            self.plotConfusionMatrix(active_model, image_holder, row, column)
+            column +=1
 
-            # Adds the ROC Curve.
-            fpr, tpr = active_model.getROCCurve()
-            roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+            self.plotROCCurve(active_model, image_holder, row, column)
 
-            canvas_1 = FigureCanvasTkAgg(roc_display.figure_,
-                                         master=image_holder)
-            canvas_1.draw()
-            canvas_1.get_tk_widget().pack(side=tkinter.LEFT)
+            row += 1
+            column = 0
 
-            self.plotTrainingHistory(active_model.getTrainingHistory(), image_holder)
+            self.plotTrainingHistory(active_model, image_holder, row, column)
+            column +=1
 
     def main(self, title="n/a", menu=None, width=1710, height=940, upperX=200,
              upperY=100, zoomed=False):
         self._root = tk.Tk()
-        self._root.title("Create New Model")
+        self._root.title("Model Viewer (all available models).")
 
         self.s = ttk.Style()
         self.s.configure('TFrame', background=settings.LEFT_BACKGROUND_COLOR)
