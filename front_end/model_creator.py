@@ -1,3 +1,4 @@
+from itertools import chain, combinations
 import functools
 import os
 
@@ -11,6 +12,15 @@ import cogni_scan.front_end.settings as settings
 import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.model as model
 
+
+def powerset(collection):
+    """Returns all possible subsets for the passed in collection."""
+    collection = sorted(collection)
+    all = []
+    for i in range(1, len(collection) + 2):
+        for c in list(combinations(collection, i)):
+            all.append(list(c))
+    return all
 
 class ModelCreator:
 
@@ -87,11 +97,29 @@ class ModelCreator:
                 self._root.config(cursor="")
                 print("done")
 
+            def createPowerModelClicked():
+                if not askyesno(
+                        title='Build All the models.',
+                        message='Build models for all possible combos of slices?'):
+                    return
+                self._root.config(cursor="watch")
+                self._root.update()
+                for slices in powerset(getSelectedSlices()):
+                    new_model = model.makeNewModel()
+                    new_model.trainAndSave(ds, slices)
+                self._root.config(cursor="")
+                print("done")
+
             def updateButtonState():
                 if len(getSelectedSlices()) > 0:
                     create_model_button["state"] = "normal"
                 else:
                     create_model_button["state"] = "disabled"
+
+                if len(getSelectedSlices()) > 1:
+                    create_model_button_1["state"] = "normal"
+                else:
+                    create_model_button_1["state"] = "disabled"
 
             canvas_2 = Canvas(self._right_frame,
                               height=90,
@@ -119,9 +147,14 @@ class ModelCreator:
                               bg=settings.RIGHT_BACKGROUND_COLOR,
                               highlightthickness=0)
             canvas_3.grid(row=3, column=0, sticky=W, pady=10)
+
             create_model_button = Button(canvas_3, text="Create Model",
                                          command=createModelClicked)
             create_model_button.grid(row=0, column=1, sticky=W)
+
+            create_model_button_1 = Button(canvas_3, text="Create Power Model",
+                                         command=createPowerModelClicked)
+            create_model_button_1.grid(row=0, column=2, sticky=W)
 
             updateButtonState()
 

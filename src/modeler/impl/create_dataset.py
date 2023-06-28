@@ -14,12 +14,14 @@ where label='{label}' group by patient_id;
 _SQL_INSERT_DATASET = """
 Insert into datasets (
     dataset_id,
+    description,
     training_scan_ids ,
     validation_scan_ids,
     testing_scan_ids
     ) 
 values (
     '{dataset_id}',
+    '{description}',
     '{training_scan_ids}',
     '{validation_scan_ids}',
     '{testing_scan_ids}'
@@ -29,7 +31,7 @@ values (
 _DEFAULT_SPLITS = 0.7, 0.15, 0.15
 
 
-def insertNewDatasetToDB(dbname, splits=None, balanced=True):
+def insertNewDatasetToDB(*, dbname, splits=None, balance_rate=0.5):
     """Splits the available scans to train, validation and testing subsets.
 
     The subsets are created based on a given ratio, such as 70%, 15%, and 15%
@@ -55,6 +57,11 @@ def insertNewDatasetToDB(dbname, splits=None, balanced=True):
     belongs (train, validation, testing) and a name for the subset so these
     subsets can then be used for further processing or model creation.
     """
+    assert 0. < balance_rate < 1.
+    if balance_rate < 0.5:
+        balance_rate = 1. - balance_rate
+    assert 0.5 <= balance_rate < 1.
+
     dbutil.SimpleSQL.setDatabaseName(dbname)
     if splits is None:
         splits = _DEFAULT_SPLITS
@@ -63,11 +70,16 @@ def insertNewDatasetToDB(dbname, splits=None, balanced=True):
     train_1, val_1, test_1 = _buildDatasets("HD")
     train_2, val_2, test_2 = _buildDatasets("HH")
 
-    # Make the datasets of the same length if needed.
-    if balanced:
-        train_1, train_2 = _balanceDatasets(train_1, train_2)
-        val_1, val_2 = _balanceDatasets(val_1, val_2)
-        test_1, test_2 = _balanceDatasets(test_1, test_2)
+    if balance_rate == 0.5:
+        description = "Balanced"
+    elif balance_rate is None:
+        description = "User all."
+    else:
+        description = f"Ratio: {balance_rate}"
+
+    train_1, train_2 = _balanceDatasets(train_1, train_2, balance_rate)
+    val_1, val_2 = _balanceDatasets(val_1, val_2, balance_rate)
+    test_1, test_2 = _balanceDatasets(test_1, test_2, balance_rate)
 
     # Merge the labeled datasets.
     train = train_1 + train_2
@@ -85,6 +97,7 @@ def insertNewDatasetToDB(dbname, splits=None, balanced=True):
 
     sql = _SQL_INSERT_DATASET.format(
         dataset_id=dataset_id,
+        description=description,
         training_scan_ids=json.dumps(train),
         validation_scan_ids=json.dumps(val),
         testing_scan_ids=json.dumps(test)
@@ -95,12 +108,15 @@ def insertNewDatasetToDB(dbname, splits=None, balanced=True):
         db.execute_non_query(sql)
 
 
-def _balanceDatasets(ds1, ds2):
+def _balanceDatasets(ds1, ds2, balance_rate):
     """Balances the input datasets to ensure they have equal length."""
+    assert 0.5 <= balance_rate < 1.
     if len(ds1) < len(ds2):
-        return ds1, ds2[:len(ds1)]
+        m = int(len(ds1) * balance_rate / (1. - balance_rate))
+        return ds1, ds2[:m]
     elif len(ds1) > len(ds2):
-        return ds1[len(ds2)], ds2
+        m = int(len(ds2) * balance_rate / (1. - balance_rate))
+        return ds2[len(ds1)], ds1
     else:
         return ds1, ds2
 
@@ -161,4 +177,4 @@ def _getScansByPatientId(pid, db):
 
 
 if __name__ == '__main__':
-    insertNewDatasetToDB("dummyscans")
+    insertNewDatasetToDB(dbname="dummyscans", balance_rate=0.6)
