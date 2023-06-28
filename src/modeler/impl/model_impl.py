@@ -242,11 +242,15 @@ class _Model(interfaces.IModel):
         X_test = features["X_test"]
         Y_test = features["Y_test"]
 
+        input_size = len(self._slices) * 512
+        size_1 = input_size * 2
+        size_2 = int(input_size / 2)
+
         self._model = tf.keras.Sequential()
-        self._model.add(tf.keras.layers.Input(len(self._slices) * 512))
-        self._model.add(tf.keras.layers.Dense(1000, activation='relu'))
+        self._model.add(tf.keras.layers.Input(input_size))
+        self._model.add(tf.keras.layers.Dense(size_1, activation='relu'))
         self._model.add(tf.keras.layers.Dropout(0.3))
-        self._model.add(tf.keras.layers.Dense(1000, activation='relu'))
+        self._model.add(tf.keras.layers.Dense(size_2 , activation='relu'))
         self._model.add(tf.keras.layers.Dropout(0.3))
         self._model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
 
