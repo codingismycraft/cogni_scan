@@ -127,8 +127,16 @@ class ModelCreator:
 
     def main(self, title="n/a", menu=None, width=710, height=340, upperX=200,
              upperY=100, zoomed=False):
+
+        ds = model.getDatasets()
+
+        if len(ds) == 0:
+            title = "Create New Model: There are no data sets available."
+        else:
+            title = f"Create New Model (there are {len(ds)} datasets)."
+
         self._root = tk.Tk()
-        self._root.title("Create New Model")
+        self._root.title(title)
 
         self.s = ttk.Style()
         self.s.configure('TFrame', background=settings.LEFT_BACKGROUND_COLOR)
