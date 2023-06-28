@@ -22,31 +22,15 @@ import cogni_scan.src.modeler.model as model
 
 class ModelViewer:
 
-    def plot_history(self, history, image_holder):
+    def plotTrainingHistory(self, history, image_holder):
         """Plots the passed in model training history object.
 
         :param history: Holds the model's training history.
         """
-        root = image_holder
-
         fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        x = [1, 2, 3, 4, 5]
-        y1 = [1, 2, 3, 4, 5]
-        y2 = [7, 8, 9, 10, 11]
-        ax1.plot(x, y1, label='Signal 1', c='g')
-        ax1.plot(x, y2, label='Signal 2', c='r')
-
-        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
-                                    expand=1)
-
-        return
-        plt.clf()
         min_value, max_value = 1000, 0
         for key in history.keys():
-            plt.plot(history[key], label=key)
+            ax1.plot(history[key], label=key)
             min_value = min(min_value, min(history[key]))
             max_value = max(max_value, max(history[key]))
 
@@ -55,10 +39,10 @@ class ModelViewer:
         plt.ylabel('Error')
         plt.legend()
         plt.grid(True)
-
-        canvas = FigureCanvasTkAgg(fig.figure_, master=image_holder)
+        canvas = FigureCanvasTkAgg(fig, master=image_holder)
         canvas.draw()
-        canvas.get_tk_widget().pack(side=tkinter.LEFT)
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
+                                    expand=1)
 
     def callback(self, event):
         for widget in self._right_frame.winfo_children():
@@ -158,7 +142,7 @@ class ModelViewer:
             canvas_1.draw()
             canvas_1.get_tk_widget().pack(side=tkinter.LEFT)
 
-            self.plot_history(None, image_holder)
+            self.plotTrainingHistory(active_model.getTrainingHistory(), image_holder)
 
     def main(self, title="n/a", menu=None, width=1710, height=940, upperX=200,
              upperY=100, zoomed=False):
