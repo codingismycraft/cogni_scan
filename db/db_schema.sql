@@ -61,6 +61,7 @@ CREATE TABLE scan_features
 create table datasets
 (
     dataset_id uuid primary key,
+    description VARCHAR(2048),
     training_scan_ids jsonb,
     validation_scan_ids jsonb,
     testing_scan_ids jsonb,
