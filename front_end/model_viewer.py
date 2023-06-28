@@ -27,32 +27,21 @@ class ModelViewer:
 
         :param history: Holds the model's training history.
         """
-        return
-
         root = image_holder
 
-        plt.rcParams["figure.figsize"] = [7.50, 3.50]
-        plt.rcParams["figure.autolayout"] = True
-        overlapping = 0.150
-        line1 = plt.plot([1, 3, 5, 2, 5, 3, 1], c='red', alpha=overlapping,
-                         lw=5)
-        line2 = plt.plot([7, 2, 5, 7, 5, 2, 7], c='green', alpha=overlapping,
-                         lw=5)
-        canvas = FigureCanvasTkAgg(plt.figure_, master=root)  # A tk.DrawingArea.
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
-                                    expand=1)
-        return
-
-        fig = Figure(figsize=(5, 4), dpi=100)
-        t = np.arange(0, 3, .01)
-        fig.add_subplot(121).plot(t, 2 * np.sin(2 * np.pi * t))
-        fig.add_subplot(122).plot(t, 3 * np.sin(2 * np.pi * t))
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        x = [1, 2, 3, 4, 5]
+        y1 = [1, 2, 3, 4, 5]
+        y2 = [7, 8, 9, 10, 11]
+        ax1.plot(x, y1, label='Signal 1', c='g')
+        ax1.plot(x, y2, label='Signal 2', c='r')
 
         canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
         canvas.draw()
         canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH,
                                     expand=1)
+
         return
         plt.clf()
         min_value, max_value = 1000, 0
@@ -171,7 +160,7 @@ class ModelViewer:
 
             self.plot_history(None, image_holder)
 
-    def main(self, title="n/a", menu=None, width=710, height=340, upperX=200,
+    def main(self, title="n/a", menu=None, width=1710, height=940, upperX=200,
              upperY=100, zoomed=False):
         self._root = tk.Tk()
         self._root.title("Create New Model")
