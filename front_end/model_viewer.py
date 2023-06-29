@@ -266,24 +266,7 @@ class ModelViewer:
 
         all_models = model.getModels()
         self._model_map = {m.getModelID()[:8]: m for m in all_models}
-
-        # Select and scroll
-        # self.treeview.selection_set(1)
-        # self.treeview.see(1)
-
-        # Lb1 = Listbox(self._left_frame)
-        # all_models = model.getModels()
-        # for index, m in enumerate(all_models):
-        #     Lb1.insert(index + 0, m.getModelID())
-        #
-        # self._model_map = {m.getModelID(): m for m in all_models}
-        #
-        # Lb1.pack(fill=tk.BOTH, expand=True)
-        # Lb1.bind("<<ListboxSelect>>", self.callback)
-
-        # Add the right view.
         self._root.geometry(f"{width}x{height}+{upperX}+{upperY}")
-
         self._root.mainloop()
 
 
