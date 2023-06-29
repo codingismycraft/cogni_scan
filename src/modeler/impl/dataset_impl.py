@@ -34,11 +34,44 @@ def getDatasetByID(dataset_id):
     raise ValueError(f"Could not find dataset: {dataset_id}.")
 
 
+def getFeaturesForScan(scan_id, slices, db=None):
+    """Returns the features from the scan for the passed in slices."""
+    if db is None:
+        with dbutil.SimpleSQL() as db:
+            return _getFeaturesForScan(scan_id, slices, db)
+    else:
+        return _getFeaturesForScan(scan_id, slices, db)
+
+def _getFeaturesForScan(scan_id, slices, db):
+    """Returns the features from the scan for the passed in slices."""
+    slices = sorted(slices)
+    n = len(slices)
+    assert n > 0
+    slice_names = []
+    for slice in slices:
+        _validateSlice(slice)
+        slice_names.append(f"features_slice{slice}")
+    sql = "SELECT " + ','.join(slice_names) + \
+          f" from scan_features where scan_id={scan_id}"
+    features = []
+    for row in db.execute_query(sql):
+        for i in range(n):
+            features.extend(row[i][0])
+    if not features:
+        raise ValueError(f"Could not find features for {scan_id}.")
+    return features
+
 def getDatasets():
     """Returns a list of all the databases from the database."""
     dbo = dbutil.SimpleSQL()
     with dbo as db:
         return [_Dataset(*row) for row in db.execute_query(_SQL_LOAD_DATASETS)]
+
+
+def _validateSlice(slice):
+    """Validates the passed in slice description."""
+    if slice not in _VALID_SLICES:
+        raise ValueError(f"Invalid slice: {slice}")
 
 
 class _Dataset(interfaces.IDataset):
@@ -116,18 +149,21 @@ class _Dataset(interfaces.IDataset):
 
             assert is_valid
 
-            X_train = [self._getFeatures(d['scan_id'], db, slices) for d in
+            X_train = [getFeaturesForScan(d['scan_id'], slices, db) for d
+                       in
                        train]
             X_train = np.array(X_train)
             Y_train = [[0] if d['label'] == 'HH' else [1] for d in train]
             Y_train = np.array(Y_train)
 
-            X_val = [self._getFeatures(d['scan_id'], db, slices) for d in val]
+            X_val = [getFeaturesForScan(d['scan_id'], slices, db) for d in
+                     val]
             X_val = np.array(X_val)
             Y_val = [[0] if d['label'] == 'HH' else [1] for d in val]
             Y_val = np.array(Y_val)
 
-            X_test = [self._getFeatures(d['scan_id'], db, slices) for d in test]
+            X_test = [getFeaturesForScan(d['scan_id'], slices, db) for d in
+                      test]
             X_test = np.array(X_test)
             Y_test = [[0] if d['label'] == 'HH' else [1] for d in test]
             Y_test = np.array(Y_test)
@@ -140,28 +176,6 @@ class _Dataset(interfaces.IDataset):
                 "X_test": X_test,
                 "Y_test": Y_test
             }
-
-    def _getFeatures(self, scan_id, db, slices):
-        """Returns the features from the scan for the passed in slices."""
-        slices = sorted(slices)
-        n = len(slices)
-        assert n > 0
-        slice_names = []
-        for slice in slices:
-            self._validateSlice(slice)
-            slice_names.append(f"features_slice{slice}")
-        sql = "SELECT " + ','.join(slice_names) + \
-              f" from scan_features where scan_id={scan_id}"
-        features = []
-        for row in db.execute_query(sql):
-            for i in range(n):
-                features.extend(row[i][0])
-        return features
-
-    def _validateSlice(self, slice):
-        """Validates the passed in slice description."""
-        if slice not in _VALID_SLICES:
-            raise ValueError(f"Invalid slice: {slice}")
 
     def _getStatsForCollection(self, collection):
         """Returns statistical info for a specific collection of scans."""

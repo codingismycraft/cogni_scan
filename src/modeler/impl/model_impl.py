@@ -16,7 +16,9 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 import cogni_scan.src.dbutil as dbutil
+import cogni_scan.src.modeler.impl.dataset_impl as dataset_impl
 import cogni_scan.src.modeler.interfaces as interfaces
+import cogni_scan.src.nifti_mri as nifti_mri
 
 _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
 
@@ -37,6 +39,16 @@ def getModels():
         sql = "select model_id, dataset_id, slices," \
               " descriptive_data from models"
         return [_Model(*row) for row in db.execute_query(sql)]
+
+
+def getModelByID(model_id):
+    """Returns the model by its model id."""
+    with dbutil.SimpleSQL() as db:
+        sql = f"select model_id, dataset_id, slices, descriptive_data " \
+              f"from models where model_id = '{model_id}' "
+        for row in db.execute_query(sql):
+            return _Model(*row)
+    raise ValueError(f"Could not find model: {model_id}")
 
 
 class _Model(interfaces.IModel):
@@ -82,7 +94,8 @@ class _Model(interfaces.IModel):
             self._model_id = model_id
             self._dataset_id = dataset_id
             self._slices = slices
-            self._confusion_matrix = np.array(descriptive_data["confusion_matrix"])
+            self._confusion_matrix = np.array(
+                descriptive_data["confusion_matrix"])
             self._training_history = descriptive_data["training_history"]
             self._f1 = descriptive_data["f1"]
             self._accuracy_score = descriptive_data["accuracy_score"]
@@ -244,13 +257,13 @@ class _Model(interfaces.IModel):
 
         input_size = len(self._slices) * 512
         size_1 = input_size * 2
-        size_2 = int(input_size / 2)
+        hidden_size_2 = int(input_size / 2)
 
         self._model = tf.keras.Sequential()
         self._model.add(tf.keras.layers.Input(input_size))
         self._model.add(tf.keras.layers.Dense(size_1, activation='relu'))
         self._model.add(tf.keras.layers.Dropout(0.3))
-        self._model.add(tf.keras.layers.Dense(size_2 , activation='relu'))
+        self._model.add(tf.keras.layers.Dense(hidden_size_2, activation='relu'))
         self._model.add(tf.keras.layers.Dropout(0.3))
         self._model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
 
@@ -315,4 +328,24 @@ class _Model(interfaces.IModel):
 
     def getROCCurve(self):
         """Returns the ROC curve of the model."""
-        return self._fpr, self._tpr
+        if self._fpr is not None:
+            return self._fpr, self._tpr
+        else:
+            return None
+
+    def _loadWeights(self):
+        """Loads the model's weights from the corresponding file."""
+        full_path = self._getStorageFullPath()
+        self._model = tf.keras.models.load_model(full_path)
+
+    def predict(self, scan_id, db=None):
+        """Predicts the label of the passed in scan.
+
+        We need the VGG16 features and the model to make the predictions.
+        """
+        slices = self.getSlices()
+        features = dataset_impl.getFeaturesForScan(scan_id, slices, db)
+        self._loadWeights()
+        features = np.array([features])
+        y_pred = self._model.predict(features)
+        return y_pred[0][0]

@@ -79,3 +79,9 @@ def test_repr():
     dataset_id = getExistingDatasetID()
     ds = model.getDatasetByID(dataset_id)
     assert dataset_id in str(ds)
+
+
+def test_getting_features_for_invalid_scan():
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
+    with pytest.raises(ValueError):
+        model.getFeaturesForScan(9999999, ['01'])

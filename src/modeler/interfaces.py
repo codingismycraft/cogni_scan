@@ -126,9 +126,9 @@ class IModel(abc.ABC):
         """Returns the ROC curve of the model."""
 
     @abc.abstractmethod
-    def getF1(self):
-        """Returns the F1 statistic for the model."""
-
-    @abc.abstractmethod
     def getAccuracyScore(self):
         """Returns the accuracy score statistic for the model."""
+
+    @abc.abstractmethod
+    def predict(self, scan_id, db=None):
+        """Predicts the label of the passed in scan id."""

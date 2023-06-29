@@ -14,9 +14,32 @@ def makeNewModel():
     return model_impl.makeNewModel()
 
 
+def getFeaturesForScan(scan_id, slices, db=None):
+    """Returns the features for the given scan.
+
+    The features returned will become the input to a model and used either
+    for training or for prediction.
+
+    The db object must be passed (should be a SimpleSQL instance) so we
+    will avoid the need to reconnet to the database in case that we will
+    have many repeated calls.
+
+    The slices must be a list of strings each one describing the MRI
+    slice to use (see the documentation of getFeatures for more).
+
+    Raises ValueError.
+    """
+    return dataset_impl.getFeaturesForScan(scan_id, slices, db)
+
+
 def getModels():
     """Returns a list of all the IModel instances from the database."""
     return model_impl.getModels()
+
+
+def getModelByID(model_id):
+    """Returns the model by its model id."""
+    return model_impl.getModelByID(model_id)
 
 
 def getDatasets():
