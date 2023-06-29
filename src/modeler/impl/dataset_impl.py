@@ -143,6 +143,7 @@ class _Dataset(interfaces.IDataset):
 
     def _getFeatures(self, scan_id, db, slices):
         """Returns the features from the scan for the passed in slices."""
+        slices = sorted(slices)
         n = len(slices)
         assert n > 0
         slice_names = []
