@@ -333,10 +333,15 @@ class _Model(interfaces.IModel):
         else:
             return None
 
-    def _loadWeights(self):
+    def _loadWeightsIfNeeded(self):
         """Loads the model's weights from the corresponding file."""
-        full_path = self._getStorageFullPath()
-        self._model = tf.keras.models.load_model(full_path)
+        if not self._model:
+            full_path = self._getStorageFullPath()
+            self._model = tf.keras.models.load_model(full_path)
+
+    def unloadWeights(self):
+        """Unloads the model weights to keep the memory lean."""
+        self._model = None
 
     def predict(self, scan_id, db=None):
         """Predicts the label of the passed in scan.
@@ -345,7 +350,7 @@ class _Model(interfaces.IModel):
         """
         slices = self.getSlices()
         features = dataset_impl.getFeaturesForScan(scan_id, slices, db)
-        self._loadWeights()
+        self._loadWeightsIfNeeded()
         features = np.array([features])
         y_pred = self._model.predict(features)
         return y_pred[0][0]

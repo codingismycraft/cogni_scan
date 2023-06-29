@@ -132,3 +132,8 @@ class IModel(abc.ABC):
     @abc.abstractmethod
     def predict(self, scan_id, db=None):
         """Predicts the label of the passed in scan id."""
+
+    @abc.abstractmethod
+    def unloadWeights(self):
+        """Unloads the model weights to keep the memory lean."""
+

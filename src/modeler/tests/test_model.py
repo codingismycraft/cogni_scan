@@ -41,6 +41,8 @@ def test_new_model():
     assert not m.getF1()
     assert not m.getAccuracyScore()
 
+    m.unloadWeights()
+
 
 def test_invalid_dataset():
     """Tests training while passing invalid dataset name."""
