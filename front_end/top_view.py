@@ -9,6 +9,7 @@ import tkinter.ttk as ttk
 import cogni_scan.constants as constants
 import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
+import cogni_scan.src.modeler.model as model
 import cogni_scan.src.utils as utils
 
 
@@ -197,6 +198,9 @@ class TopView(view.View):
         left_canvas = Canvas(main_canvas, height=60, bg=settings.TOP_BACKGROUND_COLOR)
         left_canvas.pack(side="left", fill="both", expand=False, padx=10)
 
+        middle_canvas = Canvas(main_canvas, height=60, bg=settings.TOP_BACKGROUND_COLOR)
+        middle_canvas.pack(side="left", fill="both", expand=False, padx=10)
+
         right_canvas = Canvas(main_canvas, height=60, bg=settings.TOP_BACKGROUND_COLOR)
         right_canvas.pack(side="left", fill="both", expand=False, padx=10)
 
@@ -252,21 +256,85 @@ class TopView(view.View):
         # Add the radio buttons to select scans based on their valid status.
         self._validation_status_for_scan_var = IntVar()
         self._validation_status_for_scan_var.set(mri.getValidationStatus())
-        rb_1 = Radiobutton(right_canvas, text="Undefined",
+        rb_1 = Radiobutton(middle_canvas, text="Undefined",
                            variable=self._validation_status_for_scan_var,
                            value=constants.UNDEFINED_SCAN,
                            command=self.changeValidationStatusForSelectedScan)
         rb_1.grid(row=0, column=0, pady=8)
-        rb_2 = Radiobutton(right_canvas, text="Invalid",
+        rb_2 = Radiobutton(middle_canvas, text="Invalid",
                            variable=self._validation_status_for_scan_var,
                            value=constants.INVALID_SCAN,
                            command=self.changeValidationStatusForSelectedScan)
         rb_2.grid(row=1, column=0, pady=8)
-        rb_3 = Radiobutton(right_canvas, text="Valid",
+        rb_3 = Radiobutton(middle_canvas, text="Valid",
                            variable=self._validation_status_for_scan_var,
                            value=constants.VALID_SCAN,
                            command=self.changeValidationStatusForSelectedScan)
         rb_3.grid(row=2, column=0, pady=8)
+
+        # All all the available models in the right canvas.
+        self.scrollbar = ttk.Scrollbar(right_canvas)
+        self.scrollbar.pack(side="right", fill="y")
+
+        # Treeview
+        self._treeview = ttk.Treeview(
+            right_canvas,
+            selectmode="browse",
+            yscrollcommand=self.scrollbar.set,
+            columns=(1, 2, 3, 4),
+            height=10,
+        )
+
+        self._treeview.pack(fill=tk.BOTH, expand=True)
+        self.scrollbar.config(command=self._treeview.yview)
+
+        self._treeview.tag_configure("not_calculated", background="white", foreground="black")
+        self._treeview.tag_configure("predicted-positive", background="red")
+        self._treeview.tag_configure("predicted-negative", background="green")
+
+        # Treeview columns
+        self._treeview.column("#0", anchor="w", width=120)
+        self._treeview.column(1, anchor="e", width=120)
+        self._treeview.column(2, anchor="e", width=80)
+        self._treeview.column(3, anchor="e", width=80)
+        self._treeview.column(4, anchor="e", width=80)
+
+        # Treeview headings
+        self._treeview.heading("#0", text="ID", anchor="center")
+        self._treeview.heading(1, text="Slices", anchor="center")
+        self._treeview.heading(2, text="Accuracy", anchor="center")
+        self._treeview.heading(3, text="F1", anchor="center")
+
+        treeview_data = []
+        all_models = model.getModels()
+
+        for index, m in enumerate(all_models):
+            f1 = f"{m.getF1():0.02}"
+            accuracy = f"{m.getAccuracyScore():0.02}"
+            treeview_data.append(
+                ("",
+                 m.getModelID()[:8],
+                 (
+                     str(m.getSlices()),
+                     accuracy,
+                     f1
+                 ))
+            )
+
+        # Insert treeview data
+        for item in treeview_data:
+            self._treeview.insert(
+                parent=item[0], index="end", iid=item[1], text=item[1],
+                values=item[2], tag="not_calculated"
+            )
+
+        def OnDoubleClick(event):
+            iid = self._treeview.focus()
+            values = self._treeview.item(iid)
+            self._treeview.item(iid, tags="predicted-negative")
+            tags = values["tags"]
+
+        self._treeview.bind("<Double-1>", OnDoubleClick)
 
     def changeValidationStatusForSelectedScan(self):
         mri = self.getDocument().getActiveMri()
