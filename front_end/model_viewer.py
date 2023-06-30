@@ -271,6 +271,6 @@ class ModelViewer:
 
 
 if __name__ == '__main__':
-    dbutil.SimpleSQL.setDatabaseName("dummyscans")
+    dbutil.SimpleSQL.setDatabaseName("scans")
     mc = ModelViewer()
     mc.main()

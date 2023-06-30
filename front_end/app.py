@@ -216,6 +216,6 @@ class MainFrame(view.View):
 
 
 if __name__ == '__main__':
-    dbutil.SimpleSQL.setDatabaseName("dummyscans")
+    dbutil.SimpleSQL.setDatabaseName("scans")
     mf = MainFrame()
     mf.main(settings.APP_NAME, MENU)
