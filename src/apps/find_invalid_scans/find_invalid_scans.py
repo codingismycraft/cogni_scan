@@ -17,6 +17,7 @@ After training the model we use it to discover the invalid scans among those
 that are still unasssigned.
 """
 
+import csv
 import random
 import pathlib
 import os
@@ -153,12 +154,11 @@ def findInvalidScans():
                     features = np.array([features])
                     y_pred = model.predict(features)
                     y_pred = y_pred[0][0]
-                    if y_pred < 0.5:
-                        print(f'{scan_id},{patient_id},valid')
-                        fout.write(f'{scan_id},{patient_id},valid\n')
-                    else:
-                        print(f'{scan_id},{patient_id},invalid')
-                        fout.write(f'{scan_id},{patient_id},invalid\n')
+                    status = "valid" if y_pred < 0.5 else "invalid"
+                    txt = f'{scan_id},{path},{patient_id},{status}'
+                    print(txt)
+                    fout.write(txt)
+                    fout.write("\n")
                 except Exception as ex:
                     print(ex, type(ex))
 
@@ -255,7 +255,36 @@ def buildModel():
         model.save(fullpath)
 
 
+def updateDb(filepath):
+    """Updatest the validation_status.
+
+    Needs to have the scan-status files ready and available; reads it and
+    update the validation_status in the database.
+    """
+
+    with dbutil.SimpleSQL() as db:
+        with open(filepath) as fin:
+            for tokens in csv.reader(fin):
+                scan_id = tokens[0]
+                path = tokens[1]
+                status = tokens[3]
+                status = status.strip().lower()
+
+                if status == 'valid':
+                    validation_status = 2
+                elif status == 'invalid':
+                    validation_status = 1
+                else:
+                    assert False, "Invalid validation status."
+
+                sql = f"update scan set validation_status={validation_status} " \
+                      f"where scan_id={scan_id}"
+                print(sql)
+                db.execute_non_query(sql)
+
+
 if __name__ == '__main__':
     dbutil.SimpleSQL.setDatabaseName("scans")
     # buildModel()
-    findInvalidScans()
+    # findInvalidScans()
+    updateDb(os.path.join(_CURRENT_DIR, "scan-status-2.csv"))
