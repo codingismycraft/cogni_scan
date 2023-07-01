@@ -307,7 +307,6 @@ class _Model(interfaces.IModel):
         y_pred = self._model.predict(X_test)
         y_pred_bin = [1 if p[0] > 0.5 else 0 for p in y_pred]
 
-        breakpoint()
         junk = self._getPreditionRateByLabel(Y_test, y_pred_bin)
         self._confusion_matrix = confusion_matrix(Y_test, y_pred_bin)
         self._f1 = f1_score(Y_test, y_pred_bin)
