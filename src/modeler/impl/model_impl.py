@@ -167,14 +167,19 @@ class _Model(interfaces.IModel):
 
     def reset(self):
         """Deletes it from the database and from h4 and resets its state."""
-        if self._model:
-            with dbutil.SimpleSQL() as db:
-                sql = f"delete from models where model_id = '{self._model_id}'"
-                db.execute_non_query(sql)
-            fullpath = self._getStorageFullPath()
+        # Delete from the datasase.
+        with dbutil.SimpleSQL() as db:
+            sql = f"delete from models where model_id = '{self._model_id}'"
+            db.execute_non_query(sql)
+
+        # Delete the weights from the filesystem.
+        fullpath = self._getStorageFullPath()
+        if os.path.isfile(fullpath):
             os.remove(fullpath)
-            self._model_id = str(uuid.uuid4())
-            self._clear()
+
+        # Now reset the state of the object.
+        self._model_id = str(uuid.uuid4())
+        self._clear()
 
     def _save(self):
         """Saves the model to the database.

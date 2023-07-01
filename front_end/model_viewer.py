@@ -152,6 +152,26 @@ class ModelViewer:
                 value.grid(row=0, column=column, sticky=W)
                 column += 1
 
+            def deleteModel():
+                if not askyesno(
+                        title='Delete Model',
+                        message='Are you sure you want to delete the model?'):
+                    return
+                active_model.reset()
+                selected_item = self._treeview.selection()[0]
+                self._treeview.delete(selected_item)
+
+                child_id = self._treeview.get_children()[0]
+                self._treeview.focus(child_id)
+                self._treeview.selection_set(child_id)
+
+            delete_model_button = Button(
+                labels_holder,
+                text="Delete Model",
+                command=deleteModel)
+
+            delete_model_button.grid(row=0, column=column)
+
             # Add images.
             image_holder = Canvas(self._right_frame,
                                   bg=settings.TOP_BACKGROUND_COLOR,
