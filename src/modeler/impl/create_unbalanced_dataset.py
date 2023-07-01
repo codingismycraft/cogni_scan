@@ -124,8 +124,8 @@ class DatasetCreator:
             random.shuffle(val)
 
             train = train[:s1]
-            val = train[:s2]
-            test = train[:s3]
+            val = val[:s2]
+            test = test[:s3]
 
         return train, val, test
 
