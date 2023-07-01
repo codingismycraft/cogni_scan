@@ -20,6 +20,31 @@ import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.model as model
 
 
+class ShowDatasetStats(Canvas):
+    def show_data(self, ds):
+        title = tk.Label(
+            self,
+            text="Dataset Stats.",
+            bg=settings.LABEL_BACKGROUND_COLOR,
+            fg=settings.LABEL_FRONT_COLOR, padx=10, pady=10
+        )
+        title.grid(row=0, column=0)
+        desc = ds.getDescription()
+
+        for column, name in enumerate(desc):
+            d = desc[name]
+            labels = [f'HD-{d["HD"]}', f'HH-{d["HH"]}']
+            sizes = [d["HD"], d["HH"]]
+            explode = (0, 0.1)
+            fig, ax = plt.subplots(figsize=(2, 2))
+            ax.pie(sizes, labels=labels, explode=explode)
+
+            fig.suptitle(name.title(), fontsize=12)
+            canvas = FigureCanvasTkAgg(fig, master=self)
+            canvas.draw()
+            canvas.get_tk_widget().grid(row=1, column=column)
+
+
 class ModelViewer:
 
     def plotTrainingHistory(self, active_model, image_holder, row, column):
@@ -189,6 +214,18 @@ class ModelViewer:
             column = 0
 
             self.plotTrainingHistory(active_model, image_holder, row, column)
+            column += 1
+
+            dsi = active_model.getDatasetID()
+            ds = model.getDatasetByID(dsi)
+
+            stats_canvas = ShowDatasetStats(image_holder,
+                                            bg=settings.TOP_BACKGROUND_COLOR,
+                                            width=200,
+                                            highlightthickness=0)
+            stats_canvas.show_data(ds)
+            stats_canvas.grid(row=row, column=column)
+
             column += 1
 
     def main(self, title="n/a", menu=None, width=1810, height=1040, upperX=200,

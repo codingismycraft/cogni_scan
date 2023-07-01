@@ -307,6 +307,8 @@ class _Model(interfaces.IModel):
         y_pred = self._model.predict(X_test)
         y_pred_bin = [1 if p[0] > 0.5 else 0 for p in y_pred]
 
+        breakpoint()
+        junk = self._getPreditionRateByLabel(Y_test, y_pred_bin)
         self._confusion_matrix = confusion_matrix(Y_test, y_pred_bin)
         self._f1 = f1_score(Y_test, y_pred_bin)
         self._accuracy_score = accuracy_score(Y_test, y_pred_bin)
@@ -314,6 +316,19 @@ class _Model(interfaces.IModel):
         self._fpr, self._tpr, self._thresholds = roc_curve(Y_test, y_pred)
 
         self._save()
+
+    def _getPreditionRateByLabel(self, y, pred_y):
+        if isinstance(y, np.ndarray):
+            y = y.flatten().tolist()
+        preds = {}
+        for i, j in zip(y, pred_y):
+            if i not in preds:
+                preds[i] = [0, 0]
+            if i == j:
+                preds[i][0] += 1
+            else:
+                preds[i][1] += 1
+        return preds
 
     def getConfusionMatrix(self):
         """Returns the confusion matrix of the model."""
