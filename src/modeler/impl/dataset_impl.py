@@ -42,6 +42,7 @@ def getFeaturesForScan(scan_id, slices, db=None):
     else:
         return _getFeaturesForScan(scan_id, slices, db)
 
+
 def _getFeaturesForScan(scan_id, slices, db):
     """Returns the features from the scan for the passed in slices."""
     slices = sorted(slices)
@@ -60,6 +61,7 @@ def _getFeaturesForScan(scan_id, slices, db):
     if not features:
         raise ValueError(f"Could not find features for {scan_id}.")
     return features
+
 
 def getDatasets():
     """Returns a list of all the databases from the database."""
@@ -102,6 +104,23 @@ class _Dataset(interfaces.IDataset):
     def getDescription(self):
         """Get the description of the dataset."""
         return copy.deepcopy(self.__stats)
+
+    def getScanIDs(self):
+        with dbutil.SimpleSQL() as db:
+            sql = f"Select training_scan_ids, validation_scan_ids, " \
+                  f"testing_scan_ids from datasets " \
+                  f"where dataset_id='{self.__dataset_id}'"
+
+            for row in db.execute_query(sql):
+                train, val, test = row
+                is_valid = True
+
+            return {
+                "train": copy.deepcopy(train),
+                "val": copy.deepcopy(val),
+                "test": copy.deepcopy(test)
+            }
+        assert False, "This should never happen!"
 
     def getFeatures(self, slices):
         """Returns the features of the dataset.

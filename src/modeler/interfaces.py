@@ -29,6 +29,18 @@ class IDataset(abc.ABC):
         """
 
     @abc.abstractmethod
+    def getScanIDs(self):
+       """Returns the scan-ids per each category of the dataset.
+
+       The returned value will look as follows:
+       {
+            'train': [  {'label': 'HD', 'scan_id': 2843}, ...}   ],
+            'val': [  {'label': 'HH', 'scan_id': 7854}, ...}   ],
+            'test': [  {'label': 'HD', 'scan_id': 4353}, ...}   ],
+       }
+       """
+
+    @abc.abstractmethod
     def getFeatures(self, slices):
         """Returns the features of the dataset.
 
