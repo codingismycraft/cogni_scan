@@ -66,15 +66,6 @@ def test_get_features():
     assert isinstance(features, dict)
 
 
-def test_get_get_scan_id():
-    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
-    dataset_id = getExistingDatasetID()
-    ds = model.getDatasetByID(dataset_id)
-    scan_ids = ds.getScanIDs()
-    assert isinstance(scan_ids, dict)
-    print(scan_ids)
-
-
 def test_invalid_slices():
     dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     dataset_id = getExistingDatasetID()

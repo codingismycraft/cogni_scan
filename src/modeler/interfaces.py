@@ -29,18 +29,6 @@ class IDataset(abc.ABC):
         """
 
     @abc.abstractmethod
-    def getScanIDs(self):
-       """Returns the scan-ids per each category of the dataset.
-
-       The returned value will look as follows:
-       {
-            'train': [  {'label': 'HD', 'scan_id': 2843}, ...}   ],
-            'val': [  {'label': 'HH', 'scan_id': 7854}, ...}   ],
-            'test': [  {'label': 'HD', 'scan_id': 4353}, ...}   ],
-       }
-       """
-
-    @abc.abstractmethod
     def getFeatures(self, slices):
         """Returns the features of the dataset.
 
@@ -142,10 +130,13 @@ class IModel(abc.ABC):
         """Returns the accuracy score statistic for the model."""
 
     @abc.abstractmethod
+    def getTestingPredictions(self):
+        """Returns the testing predictions for the model."""
+
+    @abc.abstractmethod
     def predict(self, scan_id, db=None):
         """Predicts the label of the passed in scan id."""
 
     @abc.abstractmethod
     def unloadWeights(self):
         """Unloads the model weights to keep the memory lean."""
-

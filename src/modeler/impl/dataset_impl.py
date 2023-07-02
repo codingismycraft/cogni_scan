@@ -105,23 +105,6 @@ class _Dataset(interfaces.IDataset):
         """Get the description of the dataset."""
         return copy.deepcopy(self.__stats)
 
-    def getScanIDs(self):
-        with dbutil.SimpleSQL() as db:
-            sql = f"Select training_scan_ids, validation_scan_ids, " \
-                  f"testing_scan_ids from datasets " \
-                  f"where dataset_id='{self.__dataset_id}'"
-
-            for row in db.execute_query(sql):
-                train, val, test = row
-                is_valid = True
-
-            return {
-                "train": copy.deepcopy(train),
-                "val": copy.deepcopy(val),
-                "test": copy.deepcopy(test)
-            }
-        assert False, "This should never happen!"
-
     def getFeatures(self, slices):
         """Returns the features of the dataset.
 
@@ -140,10 +123,13 @@ class _Dataset(interfaces.IDataset):
         {
             "X_train": [....],
             "Y_train": [....],
+            "train_scans": [....],
             "X_val": [....],
             "Y_val": [ 0, 1 ....],
+            "val_scans": [....],
             "X_test": [ 0, 1 ....],
             "Y_test": [ 0, 1 ....],
+            "test_scans": [....],
         }
 
         The X values consist of numpy arrays in the form [n, k] where k
@@ -174,26 +160,32 @@ class _Dataset(interfaces.IDataset):
             X_train = np.array(X_train)
             Y_train = [[0] if d['label'] == 'HH' else [1] for d in train]
             Y_train = np.array(Y_train)
+            train_scans =  copy.deepcopy(train)
 
             X_val = [getFeaturesForScan(d['scan_id'], slices, db) for d in
                      val]
             X_val = np.array(X_val)
             Y_val = [[0] if d['label'] == 'HH' else [1] for d in val]
             Y_val = np.array(Y_val)
+            val_scans = copy.deepcopy(val)
 
             X_test = [getFeaturesForScan(d['scan_id'], slices, db) for d in
                       test]
             X_test = np.array(X_test)
             Y_test = [[0] if d['label'] == 'HH' else [1] for d in test]
             Y_test = np.array(Y_test)
+            test_scans = copy.deepcopy(test)
 
             return {
                 "X_train": X_train,
                 "Y_train": Y_train,
+                "train_scans": train_scans,
                 "X_val": X_val,
                 "Y_val": Y_val,
+                "val_scans": val_scans,
                 "X_test": X_test,
-                "Y_test": Y_test
+                "Y_test": Y_test,
+                "test_scans": test_scans,
             }
 
     def _getStatsForCollection(self, collection):
