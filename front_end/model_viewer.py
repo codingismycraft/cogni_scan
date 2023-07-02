@@ -19,9 +19,55 @@ import cogni_scan.front_end.settings as settings
 import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.model as model
 
+def onclick(event):
+    print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+          ('double' if event.dblclick else 'single', event.button,
+           event.x, event.y, event.xdata, event.ydata))
+
+def makeCorrectWrongView(m, parent_frame):
+    counts = {}
+    for p in m.getTestingPredictions():
+        pred = p["pred"]
+        label = p["label"]
+        scan_id = p["scan_id"]
+        if label not in counts:
+            counts[label] = [0, 0]
+        if label == "HH":
+            is_correct = 1 if pred <=0.5 else 0
+            if is_correct:
+                counts[label][0] += 1
+            else:
+                counts[label][1] += 1
+        elif label == "HD":
+            is_correct = 1 if pred > 0.5 else 0
+            if is_correct:
+                counts[label][0] += 1
+            else:
+                counts[label][1] += 1
+        else:
+            assert False, f"Invalid label: {label}."
+    labels = list(counts.keys())
+    counter = {
+        'Correct': np.array([counts["HH"][0], counts["HD"][0]]),
+        'Wrong': np.array([counts["HH"][1], counts["HD"][1]]),
+    }
+    width = 0.4
+    fig, ax = plt.subplots(figsize=(4, 2))
+    bottom = np.zeros(2)
+    for key, count in counter.items():
+        p = ax.bar(labels, count, width, label=key, bottom=bottom)
+        bottom += count
+        ax.bar_label(p, label_type='center')
+    ax.set_title('Predictions in Testing Dataset')
+    ax.legend()
+
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    return fig
+
+
 
 class ShowDatasetStats(Canvas):
-    def show_data(self, ds):
+    def show_data(self, ds, active_model):
         title = tk.Label(
             self,
             text="Dataset Stats.",
@@ -43,6 +89,13 @@ class ShowDatasetStats(Canvas):
             canvas = FigureCanvasTkAgg(fig, master=self)
             canvas.draw()
             canvas.get_tk_widget().grid(row=1, column=column)
+
+
+        fig = makeCorrectWrongView(active_model, self)
+
+        canvas = FigureCanvasTkAgg(fig, master=self)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=1, column=4)
 
 
 class ModelViewer:
@@ -223,7 +276,7 @@ class ModelViewer:
                                             bg=settings.TOP_BACKGROUND_COLOR,
                                             width=200,
                                             highlightthickness=0)
-            stats_canvas.show_data(ds)
+            stats_canvas.show_data(ds, active_model)
             stats_canvas.grid(row=row, column=column)
 
             column += 1
