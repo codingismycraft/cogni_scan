@@ -71,6 +71,7 @@ class _Model(interfaces.IModel):
     _fpr = None
     _tpr = None
     _thresholds = None
+    _testing_predictions = None
 
     def __init__(self, model_id=None,
                  dataset_id=None, slices=None, descriptive_data=None):
@@ -102,6 +103,7 @@ class _Model(interfaces.IModel):
             self._fpr = np.array(descriptive_data["fpr"])
             self._tpr = np.array(descriptive_data["tpr"])
             self._roc_auc_score = descriptive_data["roc_auc_score"]
+            self._testing_predictions = descriptive_data["predictions"]
             self._thresholds = np.array(descriptive_data["thresholds"])
 
     def _clear(self):
@@ -117,6 +119,7 @@ class _Model(interfaces.IModel):
         self._fpr = None
         self._tpr = None
         self._thresholds = None
+        self._testing_predictions = None
         self._model = None
 
     def __repr__(self):
@@ -207,7 +210,8 @@ class _Model(interfaces.IModel):
                     "roc_auc_score": self._roc_auc_score,
                     "fpr": self._fpr.tolist(),
                     "tpr": self._tpr.tolist(),
-                    "thresholds": self._thresholds.tolist()
+                    "thresholds": self._thresholds.tolist(),
+                    "predictions": self._testing_predictions
                 }
             )
 
@@ -259,6 +263,7 @@ class _Model(interfaces.IModel):
 
         X_test = features["X_test"]
         Y_test = features["Y_test"]
+        test_scans = features["test_scans"]
 
         input_size = len(self._slices) * 512
         size_1 = input_size * 2
@@ -305,9 +310,14 @@ class _Model(interfaces.IModel):
 
         # Calculate the performance of the model.
         y_pred = self._model.predict(X_test)
+
         y_pred_bin = [1 if p[0] > 0.5 else 0 for p in y_pred]
 
-        junk = self._getPreditionRateByLabel(Y_test, y_pred_bin)
+        self._testing_predictions = []
+        for scan_info, prediction in zip(test_scans, y_pred):
+            scan_info["pred"] = float(prediction[0])
+            self._testing_predictions.append(scan_info)
+
         self._confusion_matrix = confusion_matrix(Y_test, y_pred_bin)
         self._f1 = f1_score(Y_test, y_pred_bin)
         self._accuracy_score = accuracy_score(Y_test, y_pred_bin)
@@ -315,19 +325,6 @@ class _Model(interfaces.IModel):
         self._fpr, self._tpr, self._thresholds = roc_curve(Y_test, y_pred)
 
         self._save()
-
-    def _getPreditionRateByLabel(self, y, pred_y):
-        if isinstance(y, np.ndarray):
-            y = y.flatten().tolist()
-        preds = {}
-        for i, j in zip(y, pred_y):
-            if i not in preds:
-                preds[i] = [0, 0]
-            if i == j:
-                preds[i][0] += 1
-            else:
-                preds[i][1] += 1
-        return preds
 
     def getConfusionMatrix(self):
         """Returns the confusion matrix of the model."""
@@ -351,6 +348,10 @@ class _Model(interfaces.IModel):
             return self._fpr, self._tpr
         else:
             return None
+
+    def getTestingPredictions(self):
+        """Returns the testing predictions for the model."""
+        return copy.deepcopy(self._testing_predictions)
 
     def _loadWeightsIfNeeded(self):
         """Loads the model's weights from the corresponding file."""
