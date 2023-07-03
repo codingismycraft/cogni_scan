@@ -9,6 +9,7 @@ import tkinter.ttk as ttk
 import cogni_scan.constants as constants
 import cogni_scan.front_end.cfc.view as view
 import cogni_scan.front_end.settings as settings
+import cogni_scan.front_end.model_viewer as model_viewer
 import cogni_scan.src.modeler.model as model
 import cogni_scan.src.utils as utils
 
@@ -103,7 +104,7 @@ class TopView(view.View):
         all_models = model.getModels()
 
         for index, m in enumerate(all_models):
-            iid = m.getModelID()[:8]
+            iid = m.getModelID()
 
             slices = []
             for s in all_slices:
@@ -122,11 +123,15 @@ class TopView(view.View):
                 values=slices + [accuracy, f1]
             )
 
+        def removeModelFromTree(model_id):
+            for item in self._treeview.get_children():
+                if item == model_id:
+                    self._treeview.delete(item)
+
         def OnDoubleClick(event):
             iid = self._treeview.focus()
-            values = self._treeview.item(iid)
-            self._treeview.item(iid, tags="predicted-negative")
-            tags = values["tags"]
+            model_viewer.openModelWindow(self.__parent_frame, iid, removeModelFromTree)
+
 
         self._treeview.bind("<Double-1>", OnDoubleClick)
 
