@@ -180,8 +180,9 @@ class PatientCollection:
                 if patient_id not in self.__patients:
                     self.__patients[patient_id] = Patient(patient_id)
 
-                scan = Scan(scan_id, fullpath, days, patient_id, origin,
-                            health_status, axis, rotation, sd0, sd1, sd2, status)
+                scan = Scan(fullpath, scan_id, days, patient_id, origin,
+                            health_status, axis, rotation, sd0, sd1, sd2,
+                            status)
 
                 # Set the has VGG features if needed.
                 if scan.getScanID() in having_vgg_features:
@@ -194,7 +195,8 @@ class PatientCollection:
             for row in db.execute_query(_SQL_SELECT_EXIT_HEALTH_STATUS):
                 patient_id, health_status = row
                 if patient_id in self.__patients:
-                    self.__patients[patient_id].setExitHealthStatus(health_status)
+                    self.__patients[patient_id].setExitHealthStatus(
+                        health_status)
 
             if show_only_healthy:
                 for _, v in self.__patients.items():
@@ -322,6 +324,7 @@ class PatientCollection:
             db.execute_non_query(_SQL_UPDATE_PATIENT_ID_IN_SCAN_FEATURES)
             db.execute_non_query(_SQL_UPDATE_LABEL_IN_SCAN_FEATURES)
 
+
 class Patient:
     """Holds the information about a patient.
 
@@ -424,10 +427,20 @@ class Patient:
 class Scan:
     """Encapsulates all the details for an MRI scan."""
 
-    def __init__(self, scan_id, fullpath, days, patient_id,
-                 origin, health_status, axis, rotation, sd0, sd1, sd2,
-                 validation_status):
+    _DEFAULT_AXIS = {'0': 0, '1': 1, '2': 2}
+    _DEFAULT_ROTATION = [0, 0, 0]
+
+    def __init__(self, fullpath, scan_id=None, days=None, patient_id=None,
+                 origin=None, health_status=None, axis=None, rotation=None,
+                 sd0=0.2, sd1=0.2, sd2=0.2,
+                 validation_status=None):
         """Intializer."""
+        if axis is None:
+            axis = copy.deepcopy(self._DEFAULT_AXIS)
+
+        if rotation is None:
+            rotation = copy.deepcopy(self._DEFAULT_ROTATION)
+
         self.__scan_id = scan_id
         self.__img = None
         self.__filepath = fullpath
@@ -655,19 +668,6 @@ class Scan:
 
 
 if __name__ == '__main__':
-    patients = PatientCollection()
-    # ids = list(patients.getPatientIDs())
-    # for x in ids:
-    #     p = patients.getPatient(x[0])
-    #     label = p.getLabel()
-    #     if label == 'HD':
-    #          print(p.getTitle())
+    JUNK_PATH = "/home/john/ADNI/ADNI/003_S_1074/Total_Intracranial_Volume_Brain_Mask/2006-12-04_12_29_02.0/I345144/ADNI_003_S_1074_MR_Total_Intracranial_Volume_Brain_Mask_Br_20121107220305810_S23534_I345144.nii"
 
-    patient_id = 'OAS30326'
-    print(patients.getDesctiptiveDataForPatient(patient_id))
-
-    # patient = patients.getPatient(patient_id)
-    # print(patient.getLabel())
-    #
-    # for x in patients.getMrisByPatient(patient_id):
-    #     print(x.getMriID())
+    s = Scan(JUNK_PATH)
