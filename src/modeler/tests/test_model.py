@@ -8,6 +8,7 @@ import pytest
 import cogni_scan.src.dbutil as dbutil
 import cogni_scan.src.modeler.model as model
 import cogni_scan.src.nifti_mri as nifti_mri
+import cogni_scan.constants as constants
 
 _DBNAME = 'dummyscans'
 _CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -26,6 +27,19 @@ def checkModelFileExists(m):
     """Returns True if the weights for the passed in model exist."""
     fullpath = os.path.join(_STORAGE_DIR, f'{m.getModelID()}.h5')
     return os.path.isfile(fullpath)
+
+
+def removeAllModels():
+    """Removes all models both from the database and the filesystem."""
+    # Remove the dummy storage directory.
+    assert "dummy" in _STORAGE_DIR
+    os.system(f"rm -rf {_STORAGE_DIR}")
+
+    # Remove all the models from the database.
+    assert "dummy" in _DBNAME
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
+    with dbutil.SimpleSQL() as db:
+        db.execute_non_query("delete from models")
 
 
 def test_new_model():
@@ -132,16 +146,36 @@ def test_request_invalid_model_id():
         model.getModelByID(model_id)
 
 
-def test_predict():
+def test_predict_from_db():
     dbutil.SimpleSQL.setDatabaseName(_DBNAME)
     count_before = len(model.getModels())
     ds = model.getDatasetByID(getExistingDatasetID())
     m = model.makeNewModel()
     m.setStorageDir(_STORAGE_DIR)
-    m.trainAndSave(ds, ["01"], max_epochs=1)
+    m.trainAndSave(ds, ["01", "11"], max_epochs=1)
+    m = model.getModelByID(m.getModelID())
+    roc_curve = m.getROCCurve()
+    assert len(roc_curve) == 2
+    predictions = m.getTestingPredictions()
+    assert isinstance(predictions, list)
     scan = getScan()
     prediction = m.predict(scan.getScanID())
     assert 0 <= prediction <= 1.
     m.reset()
     count_after = len(model.getModels())
     assert count_after == count_before
+
+
+def test_predict_from_file():
+    removeAllModels()
+    dbutil.SimpleSQL.setDatabaseName(_DBNAME)
+    # Create a new model to use for predictions.
+    ds = model.getDatasetByID(getExistingDatasetID())
+    m = model.makeNewModel()
+    m.setStorageDir(_STORAGE_DIR)
+    m.trainAndSave(ds, ["01", "11"], max_epochs=1)
+    filename = os.path.join(constants.DIR_TESTING_DATA, "mri-1.nii.gz")
+    scan = nifti_mri.Scan(filename)
+    prediction = m.predictFromScan(scan)
+    assert 0 <= prediction <= 1
+    m.reset()

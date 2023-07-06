@@ -642,6 +642,15 @@ class Scan:
         x_offset:x_offset + s_img.shape[1]] = s_img
         return l_img
 
+    def getVGG16Features(self, dist_from_center,axis):
+        slice = self.get_slice(
+            distance_from_center=dist_from_center,
+            axis=axis,
+            bounding_square=200
+        )
+        img = add_rgb_channels(slice)
+        return np.array(_feature_extractor(img))
+
     def saveVGG16Features(self, db):
         print(self.__scan_id)
         scan_id = self.__scan_id
@@ -650,6 +659,7 @@ class Scan:
         for axis in [0, 1, 2]:
             dist = self.__slice_distances[axis]
             for d in [-dist, 0, dist]:
+                # Todo: Substitute this with a call to getVGG16Features.
                 slice = self.get_slice(
                     distance_from_center=d, axis=axis, bounding_square=200
                 )

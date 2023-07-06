@@ -374,3 +374,29 @@ class _Model(interfaces.IModel):
         features = np.array([features])
         y_pred = self._model.predict(features)
         return y_pred[0][0]
+
+    def predictFromScan(self, scan):
+        """Predicts the label of the passed in scan object."""
+        assert isinstance(scan, nifti_mri.Scan)
+        self._loadWeightsIfNeeded()
+        assert self._model
+        slices = sorted(self.getSlices())
+        distances = scan.getSliceDistances()
+        features = None
+        for slice_desc in slices:
+            # slice_desc can be something like '01', '22' etc.
+            image_axis = int(slice_desc[0])
+            assert 0 <= image_axis <= 2
+            # Find the distance from center for the given axis.
+            distance_index = int(slice_desc[1]) - 1
+            assert 0 <= image_axis < len(distances)
+            distance = float(distances[image_axis])
+            if features is None:
+                features = scan.getVGG16Features(distance, image_axis)
+            else:
+                f1 = scan.getVGG16Features(distance, axis=image_axis)
+                features = np.concatenate((features, f1), axis=0)
+        features = features.flatten()
+        features = np.array([features])
+        y_pred = self._model.predict(features)
+        return y_pred[0][0]

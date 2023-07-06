@@ -1,5 +1,8 @@
+#!/usr/bin/env python3.10
+
 import functools
 import os
+import sys
 import tempfile
 import uuid
 
@@ -12,12 +15,17 @@ import tkinter as tk
 import tkinter.simpledialog
 import tkinter.ttk as ttk
 
+sys.path.insert(0, "/home/john/repos")
+
 import cogni_scan.front_end.settings as settings
+import cogni_scan.src.dbutil as dbutil
+import cogni_scan.src.modeler.model as model
 import cogni_scan.src.nifti_mri as nifti_mri
 import cogni_scan.src.utils as utils
 
 EVENT_EXIT = "EXIT"
 OPEN_FILE = "OPEN_FILE"
+RUN_PREDICTIONS = "Predict"
 SEPARATOR = "Separator"
 
 MENU = {
@@ -26,6 +34,9 @@ MENU = {
         (SEPARATOR, None),
         ("Exit", EVENT_EXIT),
     ],
+    "Options": [
+        ("Make Predictions", RUN_PREDICTIONS),
+    ]
 }
 
 JUNK_PATH = "/home/john/ADNI/ADNI/003_S_1074/Total_Intracranial_Volume_Brain_Mask/2006-12-04_12_29_02.0/I345144/ADNI_003_S_1074_MR_Total_Intracranial_Volume_Brain_Mask_Br_20121107220305810_S23534_I345144.nii"
@@ -71,6 +82,24 @@ class MainFrame:
         elif event == OPEN_FILE:
             filename = fd.askopenfilename(initialdir="/home/john/junk/ADNI")
             self.setNiftiFile(filename)
+        elif event == RUN_PREDICTIONS:
+            self._runPredictions()
+
+    def _runPredictions(self):
+        if not self._scan:
+            print("No Scan is available..")
+            return
+        all_models = model.getModels()
+
+        self._root.config(cursor="watch")
+        self._root.update()
+
+        for m in all_models:
+            prediction = m.predictFromScan(self._scan)
+            self._updateTreeViewWithPrediction(m.getModelID(), prediction)
+            print(prediction)
+
+        self._root.config(cursor="")
 
     def setNiftiFile(self, filename):
         self._scan = nifti_mri.Scan(filename)
@@ -101,25 +130,83 @@ class MainFrame:
             menubar.add_cascade(label=main_option, menu=menu)
         return menubar
 
-
     def changeAxis(self, axis_mapping):
-        if not self._scan :
+        if not self._scan:
             return
         self._scan.setAxisMapping(axis_mapping)
         self.updateImages()
 
     def changeOrienation(self, axis):
-        if not self._scan :
+        if not self._scan:
             return
         self._scan.changeOrienation(axis)
         self.updateImages()
 
+    def _updateTreeViewWithPrediction(self, model_id, prediction):
+        percent = int(prediction * 100)
+        prediction = f"To become Sick: {percent}%"
+        self._treeview.set(model_id, column="Prediction", value=prediction)
+
     def updateTop(self):
         # Add the buttons to change the Axes.
+        left_canvas = Canvas(self._top, bg="red")
+        right_canvas = Canvas(self._top, bg="green")
+
+        left_canvas.grid(row=0, column=0)
+        right_canvas.grid(row=0, column=1)
+
+        # All all the available models in the right canvas.
+        all_slices = ['01', '02', '03', '11', '12', '13', '21', '22', '23']
+        columns = all_slices + ['accuracy', 'F1', "Prediction"]
+
+        self._treeview = ttk.Treeview(left_canvas, columns=columns,
+                                      show='headings')
+        self._treeview.pack()
+
+        for s in all_slices:
+            self._treeview.column(s, minwidth=0, width=30, stretch=NO)
+
+        self._treeview.column('accuracy', minwidth=0, width=40, stretch=NO)
+        self._treeview.column('F1', minwidth=0, width=40, stretch=NO)
+        self._treeview.column('Prediction', minwidth=0, width=300, stretch=NO)
+
+        # Treeview headings
+        for s in all_slices:
+            self._treeview.heading(s, text=s)
+
+        self._treeview.heading('accuracy', text="Acc.")
+        self._treeview.heading('F1', text="F1")
+        self._treeview.heading('Prediction', text="Prediction")
+
+        treeview_data = []
+        all_models = model.getModels()
+
+        for index, m in enumerate(all_models):
+            iid = m.getModelID()
+
+            slices = []
+            for s in all_slices:
+                if s in m.getSlices():
+                    slices.append('X')
+                else:
+                    slices.append(' ')
+
+            f1 = f"{m.getF1():0.02}"
+            accuracy = f"{m.getAccuracyScore():0.02}"
+            prediction = 'n/a'
+
+            self._treeview.insert(
+                parent="",
+                index="end",
+                iid=iid,
+                values=slices + [accuracy, f1, prediction]
+            )
+
+        # Place the tranformation buttons
         buttons = []
         for axis in utils.getAxesOrientation():
             callback = functools.partial(self.changeAxis, axis)
-            button = Button(self._top, text=axis, command=callback)
+            button = Button(right_canvas, text=axis, command=callback)
             buttons.append(button)
 
         column = 0
@@ -130,7 +217,7 @@ class MainFrame:
         # Add the buttons to rotate the slices if needed.
         for axis in [0, 1, 2]:
             callback = functools.partial(self.changeOrienation, axis)
-            button = Button(self._top, text="R", command=callback)
+            button = Button(right_canvas, text="R", command=callback)
             button.grid(row=0, column=column, pady=8)
             column += 1
 
@@ -143,7 +230,7 @@ class MainFrame:
                 self._slice_canvas[(row, col)] = c
 
     def main(self, title="n/a", width=1600, height=800, upperX=200,
-             upperY=100, zoomed=False):
+             upperY=100, zoomed=False, filename=None):
         self._root = tk.Tk()
         self._root.title(title)
 
@@ -161,10 +248,17 @@ class MainFrame:
         self.updateTop()
         self.updateBottom()
 
+        # If a file was passed in open it..
+        if filename:
+            self.setNiftiFile(filename)
+
         # Start the loop.
         self._root.mainloop()
 
 
 if __name__ == '__main__':
+    dbutil.SimpleSQL.setDatabaseName("scans")
     mf = MainFrame()
-    mf.main("View NIFTI File")
+    filename = JUNK_PATH
+    # filename = None if len(sys.argv) <= 0 else sys.argv[1]
+    mf.main("View NIFTI File", filename=filename)
