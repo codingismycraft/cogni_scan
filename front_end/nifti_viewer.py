@@ -259,6 +259,5 @@ class MainFrame:
 if __name__ == '__main__':
     dbutil.SimpleSQL.setDatabaseName("scans")
     mf = MainFrame()
-    filename = JUNK_PATH
-    # filename = None if len(sys.argv) <= 0 else sys.argv[1]
+    filename = None if len(sys.argv) <= 0 else sys.argv[1]
     mf.main("View NIFTI File", filename=filename)
