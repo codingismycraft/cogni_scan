@@ -85,7 +85,12 @@ class TopView(view.View):
         columns = all_slices + ['accuracy', 'F1']
         # Treeview
         self._treeview = ttk.Treeview(canvas, columns=columns, show='headings')
-        self._treeview.place(relx=0, rely=0.1, width=350, height=500)
+        self._treeview.place(x= 4, y=4, width=350, height=200)
+
+        vsb = ttk.Scrollbar(canvas, orient="vertical", command=self._treeview.yview)
+        vsb.place(x=356 , y=4, height=200)
+
+        self._treeview.configure(yscrollcommand=vsb.set)
 
         for s in all_slices:
             self._treeview.column(s, minwidth=0, width=30, stretch=NO)
@@ -102,6 +107,7 @@ class TopView(view.View):
 
         treeview_data = []
         all_models = model.getModels()
+        all_models = sorted(all_models, key=lambda x: x.getF1())
 
         for index, m in enumerate(all_models):
             iid = m.getModelID()
@@ -130,8 +136,9 @@ class TopView(view.View):
 
         def OnDoubleClick(event):
             iid = self._treeview.focus()
-            model_viewer.openModelWindow(self.__parent_frame, iid, removeModelFromTree)
-
+            model_viewer.openModelWindow(
+                self.__parent_frame, iid, removeModelFromTree
+            )
 
         self._treeview.bind("<Double-1>", OnDoubleClick)
 
