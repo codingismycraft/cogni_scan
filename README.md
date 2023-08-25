@@ -94,3 +94,12 @@
     The size is hard-coded and never changes since changing it it will require very
     expensive re-calculations of the available features. 
 
+### Screen shots
+
+![](nifti-viewer.png)
+
+![](mri-model-viewer.png)
+
+![](model-stats.png)
+
+![](data-creator.png)
