@@ -8,7 +8,7 @@ _SQL_SELECT_ALL = """
 Select scan_id, fullpath from scan limit 10;
 """
 
-_SQL_DELETE_SCAN = "DELETE SCAN where scan_id = {}"
+_SQL_DELETE_SCAN = "DELETE from scan where scan_id = {}"
 
 
 def loadFromDb():
