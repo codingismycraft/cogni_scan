@@ -20,7 +20,8 @@ def loadFromDb():
             if not os.path.exists(path):
                 not_existing_ids.append(scan_id)
 
-        for row_id in not_existing_ids:
+    for row_id in not_existing_ids:
+        with dbutil.SimpleSQL() as db:
             sql = _SQL_DELETE_SCAN.format(row_id)
             print(sql)
             db.execute_non_query(sql)
