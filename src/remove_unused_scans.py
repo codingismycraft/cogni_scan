@@ -5,7 +5,7 @@ import os
 import cogni_scan.src.dbutil as dbutil
 
 _SQL_SELECT_ALL = """
-Select scan_id, fullpath from scan limit 10;
+Select scan_id, fullpath from scan 10;
 """
 
 _SQL_DELETE_SCAN = "DELETE from scan where scan_id = {}"
