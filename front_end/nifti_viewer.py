@@ -39,9 +39,6 @@ MENU = {
     ]
 }
 
-JUNK_PATH = "/home/john/ADNI/ADNI/003_S_1074/Total_Intracranial_Volume_Brain_Mask/2006-12-04_12_29_02.0/I345144/ADNI_003_S_1074_MR_Total_Intracranial_Volume_Brain_Mask_Br_20121107220305810_S23534_I345144.nii"
-
-
 def saveSlicesToDisk(scan):
     """Saves the slices for the passed in scan to disk."""
     prefix = str(uuid.uuid4())[:8]
@@ -80,7 +77,7 @@ class MainFrame:
             self._root.quit()
             self._root = None
         elif event == OPEN_FILE:
-            filename = fd.askopenfilename(initialdir="/home/john/junk/ADNI")
+            filename = fd.askopenfilename(initialdir="/home/john")
             self.setNiftiFile(filename)
         elif event == RUN_PREDICTIONS:
             self._runPredictions()
@@ -150,7 +147,7 @@ class MainFrame:
     def updateTop(self):
         # Add the buttons to change the Axes.
         left_canvas = Canvas(self._top, bg="red")
-        right_canvas = Canvas(self._top, bg="green")
+        right_canvas = Canvas(self._top, bg="white")
 
         left_canvas.grid(row=0, column=0)
         right_canvas.grid(row=0, column=1)
@@ -225,7 +222,7 @@ class MainFrame:
         self._slice_canvas = {}
         for row in (0, 1, 2):
             for col in (0, 1, 2):
-                c = Canvas(self._bottom, bg="blue")
+                c = Canvas(self._bottom, bg=settings.RIGHT_BACKGROUND_COLOR)
                 c.grid(row=row, column=col, pady=(10, 10), padx=(10, 10))
                 self._slice_canvas[(row, col)] = c
 
@@ -234,9 +231,9 @@ class MainFrame:
         self._root = tk.Tk()
         self._root.title(title)
 
-        self._top = Canvas(self._root, bg="red", highlightthickness=0,
+        self._top = Canvas(self._root, bg="white", highlightthickness=0,
                            height=60)
-        self._bottom = Canvas(self._root, bg="green", highlightthickness=0)
+        self._bottom = Canvas(self._root, bg="black", highlightthickness=0)
 
         self._top.pack(fill=BOTH, side=TOP, pady=10, padx=10)
         self._bottom.pack(fill=BOTH, side=TOP, pady=10, padx=10)
