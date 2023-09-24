@@ -15,7 +15,7 @@ CREATE TABLE scan
     UNIQUE (fullpath)
 );
 
-\COPY scan (fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status ) FROM '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
+\COPY scan (fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status ) FROM '/scan.csv' DELIMITER ',' CSV HEADER;
 
 
 CREATE TABLE patient
@@ -34,7 +34,7 @@ CREATE TABLE diagnosis
     UNIQUE (patient_id, days)
 );
 
-\COPY diagnosis (patient_id, days, origin, health_status) FROM '/home/john/repos/cogni_scan/db/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
+\COPY diagnosis (patient_id, days, origin, health_status) FROM '/oasis3_diagnosis.csv' DELIMITER ',' CSV HEADER;
 
 -- stores VGG16 generated feautures
 CREATE TABLE scan_features
@@ -79,7 +79,13 @@ create table models
 );
 
 -- To back the database:
--- \copy (SELECT fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status  FROM scan) TO '/home/john/repos/cogni_scan/db/scan.csv' DELIMITER ',' CSV HEADER;
--- \copy (SELECT * FROM diagnosis) TO '/home/john/repos/cogni_scan/db/diagnosis.csv' DELIMITER ',' CSV HEADER;
--- \copy (SELECT * FROM patient) TO '/home/john/repos/cogni_scan/db/patient.csv' DELIMITER ',' CSV HEADER;
--- \copy (SELECT fullpath, validation_status FROM scan) TO '/home/john/repos/cogni_scan/db/validation_status.csv' DELIMITER ',' CSV HEADER;
+
+
+-- \copy (SELECT * FROM scan_features) TO '/home/john/nifti-samples/scan_features.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT * FROM datasets) TO '/home/john/nifti-samples/datasets.csv' DELIMITER ',' CSV HEADER;
+-- \copy models TO '/home/john/models.csv' DELIMITER ',' CSV HEADER;
+
+-- \copy (SELECT fullpath,days,patient_id,origin,health_status,axis,rotation,sd0,sd1,sd2,validation_status  FROM scan) TO '/scan.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT * FROM diagnosis) TO '/diagnosis.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT * FROM patient) TO '/patient.csv' DELIMITER ',' CSV HEADER;
+-- \copy (SELECT fullpath, validation_status FROM scan) TO '/cogni_scan/db/validation_status.csv' DELIMITER ',' CSV HEADER;

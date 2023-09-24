@@ -103,3 +103,22 @@
 ![](model-stats.png)
 
 ![](data-creator.png)
+
+### Running the nifi viewer only
+
+To get access to only the nifi viewer which will be making predictions you do 
+not need to have the full suite of cogni scan installed instead you can use the
+Vagrantfile to build a VM that will expose the front end from it following the
+following instructions:
+
+```
+cd cogni_scan
+vagrant up
+cd /cogni_scan/db
+./update_docker.sh
+cd ../front_end
+./nifti-viewer
+```
+
+If you have nifti files that you want to share between the host and the guest
+machine you can add them to the `cogni_scan/samples` directory.

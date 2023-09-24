@@ -3,7 +3,7 @@
 import psycopg2
 import sys
 
-_CONN_STR = "postgresql://postgres:test@localhost:5433/{dbname}"
+_CONN_STR = "postgresql://postgres:postgres@localhost:5433/{dbname}"
 
 
 class SimpleSQL:
