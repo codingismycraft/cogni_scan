@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=nifti_viewer
+Terminal=true
+Exec=/home/john/repos/cogni_scan/front_end/nifti_viewer.py %F
+MimeType=data/nii
+
