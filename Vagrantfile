@@ -27,7 +27,7 @@ SCRIPT
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-22.04"
   config.vm.synced_folder "./", "/cogni_scan/"
-  config.vm.synced_folder "/home/john/nifti-samples",  "/cogni_scan/samples"
+  # config.vm.synced_folder "/home/john/nifti-samples",  "/cogni_scan/samples"
   config.ssh.forward_agent = true
   config.ssh.forward_x11 = true
   config.vm.provision "shell", inline: $script
