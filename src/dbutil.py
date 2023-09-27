@@ -3,6 +3,8 @@
 import psycopg2
 import sys
 
+_CONN_STR = "postgresql://postgres:test@localhost:5433/{dbname}"
+# Give a better solution. There is a discepancy to the vagant db.
 _CONN_STR = "postgresql://postgres:postgres@localhost:5433/{dbname}"
 
 

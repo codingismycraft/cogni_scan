@@ -39,6 +39,7 @@ MENU = {
     ]
 }
 
+
 def saveSlicesToDisk(scan):
     """Saves the slices for the passed in scan to disk."""
     prefix = str(uuid.uuid4())[:8]
@@ -71,13 +72,14 @@ def saveSlicesToDisk(scan):
 class MainFrame:
     _root = None
     _scan = None
+    _predictionsRectangle = None
 
     def processEvent(self, event, data=None):
         if event == EVENT_EXIT:
             self._root.quit()
             self._root = None
         elif event == OPEN_FILE:
-            filename = fd.askopenfilename(initialdir="/home/john")
+            filename = fd.askopenfilename(initialdir="/home/john/nifti-samples")
             self.setNiftiFile(filename)
         elif event == RUN_PREDICTIONS:
             self._runPredictions()
@@ -87,20 +89,93 @@ class MainFrame:
             print("No Scan is available..")
             return
         all_models = model.getModels()
-
         self._root.config(cursor="watch")
         self._root.update()
-
+        predictions = []
         for m in all_models:
             prediction = m.predictFromScan(self._scan)
             self._updateTreeViewWithPrediction(m.getModelID(), prediction)
             print(prediction)
-
+            predictions.append(int(prediction * 100))
         self._root.config(cursor="")
+        # self._updatePredictionsBar(predictions)
+        self._updatePredictionsRectangle(predictions)
+
+    def _updatePredictionsRectangle(self, values):
+        canvas = self._predictionsRectangle
+        if not canvas:
+            return
+
+        upper_x = 10
+        upper_y = 10
+        lower_x = 380
+        lower_y = 160
+
+        assert isinstance(values, list) and len(values) > 0
+        for v in values:
+            assert 0. <= v <= 100.
+        values.sort()
+        width = (lower_x - upper_x) / len(values)
+        assert width > 0
+        height = lower_y - upper_y
+        assert height > 0
+        x, y = upper_x, upper_y
+        for v in values:
+            y = height * (100 - v) / 100
+            canvas.create_rectangle(x, upper_y, x + width, upper_y + y,
+                                    outline="black", fill="green", width=2)
+            canvas.create_rectangle(x, upper_y + y, x + width, upper_y + height,
+                                    outline="black", fill="red", width=2)
+            x += width
+
+        x0, y0 = upper_x, lower_y + 15
+        x1, y1 = x, lower_y + 45
+        green = 100 * len(values) - sum( 100 - z for z in values)
+
+        x = green * (x1 -x0) / 100 + x0
+
+        canvas.create_rectangle(x0, y0, x, y1,
+                                outline="black", fill="green", width=2)
+
+        canvas.create_rectangle(x, y0, x1, y1,
+                            outline="black", fill="red", width=2)
+
+    def _updatePredictionsBar(self, values):
+        canvas = self._predictionsRectangle
+        if not canvas:
+            return
+
+        upper_x = 10
+        upper_y = 10
+        lower_x = 200
+        lower_y = 200
+
+        assert isinstance(values, list) and len(values) > 0
+        for v in values:
+            assert 0. <= v <= 100.
+
+        red_area = sum(values)
+        green_area = 100 * len(values) - sum(values)
+
+        L = green_area / red_area
+
+        y1 = (L * lower_y + upper_y) / (1 - L)
+
+        width = 10
+        height = lower_y - upper_y
+        x, y = upper_x, upper_y
+        v = red_area
+        y = height * (100 - v) / 100
+        canvas.create_rectangle(x, upper_y, x + width, upper_y + y1,
+                                outline="black", fill="green", width=2)
+        canvas.create_rectangle(x, upper_y + y, lower_x, upper_y + y1,
+                                outline="black", fill="red", width=2)
 
     def setNiftiFile(self, filename):
+        self._root.title(f"Current Nifti file: {filename}")
         self._scan = nifti_mri.Scan(filename)
         self.updateImages()
+        self.updateTop()
 
     def updateImages(self):
         self._imgs_cache = []
@@ -147,10 +222,12 @@ class MainFrame:
     def updateTop(self):
         # Add the buttons to change the Axes.
         left_canvas = Canvas(self._top, bg="red")
+        self._predictionsRectangle = Canvas(self._top, bg="black")
         right_canvas = Canvas(self._top, bg="white")
 
         left_canvas.grid(row=0, column=0)
-        right_canvas.grid(row=0, column=1)
+        self._predictionsRectangle.grid(row=0, column=1)
+        right_canvas.grid(row=0, column=2)
 
         # All all the available models in the right canvas.
         all_slices = ['01', '02', '03', '11', '12', '13', '21', '22', '23']
@@ -254,7 +331,7 @@ class MainFrame:
 
 
 if __name__ == '__main__':
-    dbutil.SimpleSQL.setDatabaseName("scans")
+    dbutil.SimpleSQL.setDatabaseName("dummyscans")
     mf = MainFrame()
     filename = None if len(sys.argv) <= 1 else sys.argv[1]
     mf.main("View NIFTI File", filename=filename)

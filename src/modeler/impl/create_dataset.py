@@ -94,6 +94,7 @@ def insertNewDatasetToDB(*, dbname, splits=None, balance_rate=0.5):
 
     # Save the datasets to the database.
     dataset_id = str(uuid.uuid4())
+    print(dataset_id)
 
     sql = _SQL_INSERT_DATASET.format(
         dataset_id=dataset_id,
@@ -177,4 +178,4 @@ def _getScansByPatientId(pid, db):
 
 
 if __name__ == '__main__':
-    insertNewDatasetToDB(dbname="dummyscans", balance_rate=0.6)
+    insertNewDatasetToDB(dbname="scans", balance_rate=0.6)
