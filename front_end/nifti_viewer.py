@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.10
+#!/usr/bin/env python3
 
 import functools
 import os
@@ -98,7 +98,6 @@ class MainFrame:
             print(prediction)
             predictions.append(int(prediction * 100))
         self._root.config(cursor="")
-        # self._updatePredictionsBar(predictions)
         self._updatePredictionsRectangle(predictions)
 
     def _updatePredictionsRectangle(self, values):
@@ -127,49 +126,6 @@ class MainFrame:
             canvas.create_rectangle(x, upper_y + y, x + width, upper_y + height,
                                     outline="black", fill="red", width=2)
             x += width
-
-        x0, y0 = upper_x, lower_y + 15
-        x1, y1 = x, lower_y + 45
-        green = 100 * len(values) - sum( 100 - z for z in values)
-
-        x = green * (x1 -x0) / 100 + x0
-
-        canvas.create_rectangle(x0, y0, x, y1,
-                                outline="black", fill="green", width=2)
-
-        canvas.create_rectangle(x, y0, x1, y1,
-                            outline="black", fill="red", width=2)
-
-    def _updatePredictionsBar(self, values):
-        canvas = self._predictionsRectangle
-        if not canvas:
-            return
-
-        upper_x = 10
-        upper_y = 10
-        lower_x = 200
-        lower_y = 200
-
-        assert isinstance(values, list) and len(values) > 0
-        for v in values:
-            assert 0. <= v <= 100.
-
-        red_area = sum(values)
-        green_area = 100 * len(values) - sum(values)
-
-        L = green_area / red_area
-
-        y1 = (L * lower_y + upper_y) / (1 - L)
-
-        width = 10
-        height = lower_y - upper_y
-        x, y = upper_x, upper_y
-        v = red_area
-        y = height * (100 - v) / 100
-        canvas.create_rectangle(x, upper_y, x + width, upper_y + y1,
-                                outline="black", fill="green", width=2)
-        canvas.create_rectangle(x, upper_y + y, lower_x, upper_y + y1,
-                                outline="black", fill="red", width=2)
 
     def setNiftiFile(self, filename):
         self._root.title(f"Current Nifti file: {filename}")
