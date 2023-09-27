@@ -3,9 +3,7 @@
 import psycopg2
 import sys
 
-_CONN_STR = "postgresql://postgres:test@localhost:5433/{dbname}"
-# Give a better solution. There is a discepancy to the vagant db.
-_CONN_STR = "postgresql://postgres:postgres@localhost:5433/{dbname}"
+import cogni_scan.src.utils as utils
 
 
 class SimpleSQL:
@@ -15,13 +13,10 @@ class SimpleSQL:
     def setDatabaseName(cls, dbname):
         cls._dbname = dbname
 
-    @classmethod
-    def getConnString(cls):
-        return _CONN_STR.format(dbname=cls._dbname)
-
     def __enter__(self):
         assert self._dbname, "You must provide a database name."
-        self._connection = psycopg2.connect(self.getConnString())
+        conn_str = utils.getPsqlConnectionString()
+        self._connection = psycopg2.connect(conn_str)
         return self
 
     def __exit__(self, exc_type, exc_value, trace):

@@ -1,11 +1,11 @@
-
 import datetime
+import os
 import functools
+import pathlib
+import json
 
 import nibabel as nib
-
 import cogni_scan.src.nifti_mri as nm
-
 
 AXES = [
     (0, 1, 2),
@@ -27,6 +27,26 @@ ROTATIONS = [
     ''
 ]
 
+
+def getDabaseName():
+    home_dir = pathlib.Path.home()
+    filename = os.path.join(home_dir, '.cogni_scan', 'settings.json')
+    with open(filename) as fin:
+        settings = json.load(fin)
+        return settings["database_name"]
+
+
+def getPsqlConnectionString():
+    home_dir = pathlib.Path.home()
+    filename = os.path.join(home_dir, '.cogni_scan', 'settings.json')
+    with open(filename) as fin:
+        settings = json.load(fin)
+        dbname = settings["database_name"]
+        port = settings["postgres_port"]
+        password = settings["postgres_password"]
+        return f"postgresql://postgres:{password}@localhost:{port}/{dbname}"
+
+
 def getAxesOrientation():
     axes = []
     for a1, a2, a3 in AXES:
@@ -36,6 +56,7 @@ def getAxesOrientation():
 
 def loadMRI(filepath):
     return nm.NiftiMri(filepath)
+
 
 def timeit(foo):
     @functools.wraps(foo)
@@ -47,9 +68,9 @@ def timeit(foo):
             raise
         finally:
             t2 = datetime.datetime.now()
-            print("Duration: ", (t2-t1).total_seconds())
-    return inner
+            print("Duration: ", (t2 - t1).total_seconds())
 
+    return inner
 
 
 def saveMri(path, axes=None, rotation=None):
@@ -85,4 +106,5 @@ def saveMri(path, axes=None, rotation=None):
 
 
 if __name__ == '__main__':
-    saveMri("junk-path")
+    print (getDabaseName())
+    print(getPsqlConnectionString())

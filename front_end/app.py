@@ -13,6 +13,7 @@ import cogni_scan.front_end.right_view as right_view
 import cogni_scan.front_end.settings as settings
 import cogni_scan.front_end.top_view as top_view
 import cogni_scan.src.dbutil as dbutil
+import cogni_scan.src.utils as utils
 
 EVENT_EXIT = "EXIT"
 EVENT_UPDATE_LABELS = "UPDATE_LABELS"
@@ -216,6 +217,7 @@ class MainFrame(view.View):
 
 
 if __name__ == '__main__':
-    dbutil.SimpleSQL.setDatabaseName("scans")
+    dbname = utils.getDabaseName()
+    dbutil.SimpleSQL.setDatabaseName(dbname)
     mf = MainFrame()
     mf.main(settings.APP_NAME, MENU)

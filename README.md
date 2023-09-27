@@ -27,7 +27,20 @@
     different sources and enable the consistent analysis of MRI data for tasks
     such as model building, back-testing, and making predictions.
 
-## Implemenation 
+### Settings
+To set up the database settings locally you must create a file named
+
+`~/.cogni_scan/settings.json`
+
+with the following content:
+
+```
+{
+"database_name": "scans",
+"postgres_port": 5433,
+"postgres_password": "test"
+}
+```
 
 ### Scan
 
