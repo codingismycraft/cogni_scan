@@ -28,23 +28,15 @@ ROTATIONS = [
 ]
 
 
-def getDabaseName():
-    home_dir = pathlib.Path.home()
-    filename = os.path.join(home_dir, '.cogni_scan', 'settings.json')
-    with open(filename) as fin:
-        settings = json.load(fin)
-        return settings["database_name"]
-
-
 def getPsqlConnectionString():
+    conn_str = os.environ.get("CONN_STR")
+    if conn_str:
+        return conn_str
     home_dir = pathlib.Path.home()
     filename = os.path.join(home_dir, '.cogni_scan', 'settings.json')
     with open(filename) as fin:
         settings = json.load(fin)
-        dbname = settings["database_name"]
-        port = settings["postgres_port"]
-        password = settings["postgres_password"]
-        return f"postgresql://postgres:{password}@localhost:{port}/{dbname}"
+        return settings["CONN_STR"]
 
 
 def getAxesOrientation():
@@ -106,5 +98,4 @@ def saveMri(path, axes=None, rotation=None):
 
 
 if __name__ == '__main__':
-    print (getDabaseName())
     print(getPsqlConnectionString())

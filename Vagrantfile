@@ -28,9 +28,7 @@ $create_settings = <<SCRIPT
     mkdir -p /home/vagrant/.cogni_scan
     if [ ! -f "/home/vagrant/.cogni_scan/settings.json" ]; then
         echo "{" >> /home/vagrant/.cogni_scan/settings.json
-        echo '    "database_name": "scans",' >> /home/vagrant/.cogni_scan/settings.json
-        echo '    "postgres_port": 5433,' >> /home/vagrant/.cogni_scan/settings.json
-        echo '    "postgres_password": "postgres" '>> /home/vagrant/.cogni_scan/settings.json
+        echo '    "CONN_STR": "postgresql://postgres:postgres@localhost:5433/scans" ' >> /home/vagrant/.cogni_scan/settings.json
         echo "}" >> /home/vagrant/.cogni_scan/settings.json
     fi
 SCRIPT
@@ -38,7 +36,7 @@ SCRIPT
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-22.04"
   config.vm.synced_folder "./", "/cogni_scan/"
-  # config.vm.synced_folder "/home/john/nifti-samples",  "/cogni_scan/samples"
+  config.vm.synced_folder "/home/john/nifti-samples",  "/cogni_scan/samples"
   config.ssh.forward_agent = true
   config.ssh.forward_x11 = true
   config.vm.provision "shell", inline: $script

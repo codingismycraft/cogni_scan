@@ -245,7 +245,6 @@ if __name__ == '__main__':
             self._root.mainloop()
 
 
-    dbutil.SimpleSQL.setDatabaseName("scans")
     mc = _ModelViewer()
     mc.main()
     model_id = 'c8d4fa20-4076-4ca4-a330-a931b61acd7f'

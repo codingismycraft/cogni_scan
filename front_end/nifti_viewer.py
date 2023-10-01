@@ -6,6 +6,8 @@ import sys
 import tempfile
 import uuid
 
+import PIL 
+
 from PIL import ImageTk
 from tkinter import *
 from tkinter import filedialog as fd
@@ -287,8 +289,6 @@ class MainFrame:
 
 
 if __name__ == '__main__':
-    dbname = utils.getDabaseName()
-    dbutil.SimpleSQL.setDatabaseName(dbname)
     mf = MainFrame()
     filename = None if len(sys.argv) <= 1 else sys.argv[1]
     mf.main("View NIFTI File", filename=filename)

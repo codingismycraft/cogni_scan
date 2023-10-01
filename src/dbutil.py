@@ -7,15 +7,10 @@ import cogni_scan.src.utils as utils
 
 
 class SimpleSQL:
-    _dbname = None
-
-    @classmethod
-    def setDatabaseName(cls, dbname):
-        cls._dbname = dbname
 
     def __enter__(self):
-        assert self._dbname, "You must provide a database name."
         conn_str = utils.getPsqlConnectionString()
+        print(f"Using Connection String: {conn_str}")
         self._connection = psycopg2.connect(conn_str)
         return self
 
