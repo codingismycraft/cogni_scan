@@ -22,7 +22,7 @@ Clone the code to any directory you like:
 mkdir ~/nifti-files
 mdikr cogni_scan
 cd cogni_scan
-git clone https://github.com/codingismycraft/cogni_scan.git
+git clone https://github.com/neuproscan/cogni_scan.git
 vagrant up
 vagrant ssh
 ```
