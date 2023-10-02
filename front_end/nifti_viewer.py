@@ -90,7 +90,8 @@ class MainFrame:
                 home_dir = pathlib.Path.home()
                 initialdir = os.path.join(home_dir,"nifti-files")
             filename = fd.askopenfilename(initialdir=initialdir)
-            self.setNiftiFile(filename)
+            if os.path.isfile(filename):
+                self.setNiftiFile(filename)
         elif event == RUN_PREDICTIONS:
             self._runPredictions()
 
