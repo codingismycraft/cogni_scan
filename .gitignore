@@ -13,6 +13,7 @@ pt.sh
 todo.md
 
 .idea
+.vagrant/
 
 # Distribution / packaging
 .Python

@@ -135,3 +135,4 @@ cd ../front_end
 
 If you have nifti files that you want to share between the host and the guest
 machine you can add them to the `cogni_scan/samples` directory.
+

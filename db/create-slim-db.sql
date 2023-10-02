@@ -18,7 +18,7 @@ create table models
 );
 
 
-\COPY models FROM '/models.csv' DELIMITER ',' CSV HEADER;
+-- \COPY models FROM '/models.csv' DELIMITER ',' CSV HEADER;
 
 -- To back the database:
 -- \copy models TO '/home/john/models.csv' DELIMITER ',' CSV HEADER;

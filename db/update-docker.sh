@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+cd /cogni_scan/db
+
 # Get the models from the storage site.
 wget https://neuproscan-storage.us-east-1.linodeobjects.com/models.csv 
 
@@ -14,3 +16,5 @@ docker exec mydb psql -U postgres scans -f create-slim-db.sql
 
 # Synchronize the weights if needed
 ./sync_model_weights.py
+
+cd -

@@ -37,5 +37,4 @@ def main():
 
 
 if __name__ == '__main__':
-    dbutil.SimpleSQL.setDatabaseName("scans")
     main()

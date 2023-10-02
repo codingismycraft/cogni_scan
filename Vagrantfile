@@ -22,7 +22,14 @@ $addaliases = <<SCRIPT
     if ! cat /home/vagrant/.bashrc | grep "PYTHONPATH"; then
         echo "export PYTHONPATH=/" >> /home/vagrant/.bashrc
     fi
+    if ! cat /home/vagrant/.bashrc | grep "alias nv"; then
+        echo "alias nv='/cogni_scan/front_end/nifti_viewer.py'" >> /home/vagrant/.bashrc
+    fi
+    if ! cat /home/vagrant/.bashrc | grep "alias updatedb"; then
+        echo "alias updatedb='/cogni_scan/db/update-docker.sh'" >> /home/vagrant/.bashrc
+    fi
 SCRIPT
+
 
 $create_settings = <<SCRIPT
     mkdir -p /home/vagrant/.cogni_scan
@@ -33,10 +40,11 @@ $create_settings = <<SCRIPT
     fi
 SCRIPT
 
+
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-22.04"
   config.vm.synced_folder "./", "/cogni_scan/"
-  config.vm.synced_folder "/home/john/nifti-samples",  "/cogni_scan/samples"
+  config.vm.synced_folder "~/nifti-files",  "/cogni_scan/shared"
   config.ssh.forward_agent = true
   config.ssh.forward_x11 = true
   config.vm.provision "shell", inline: $script
@@ -50,3 +58,4 @@ Vagrant.configure("2") do |config|
     d.run "postgres", args: "-p 5433:5432 -e POSTGRES_PASSWORD=postgres --name mydb -d postgres"
   end
 end
+
