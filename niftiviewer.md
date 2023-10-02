@@ -1,44 +1,70 @@
-# Running niftiviewer from Vagrant
 
-Niftiviewer is a front-end desktop application (written in tkinter) which
-allows the user to pass a nifti file through the set of the available models
-and get a prediction about how possible is for the subject to develop dementia
-in the following years.  
+# How to Run Niftiviewer Using Vagrant
 
-To keep things easier to run NiftiViewer is bundled to run from a VM that is
-managed from the Vagrant file that can be found in this directory.
+Niftiviewer is an easy-to-use desktop application designed with tkinter that
+lets you analyze a nifti file and predict the possibility of the file's subject
+developing dementia in the future.
 
-## Requirements:
+You can effortlessly run Niftiviewer from a virtual machine that is managed by
+a Vagrant file located in this directory. You can use any Operating system that
+supports `virtualbox` and `vagrant` such as MS-Windows or any flavor of Linux.
 
-- [Vagrant](https://developer.hashicorp.com/vagrant/docs/installation)
+## Prerequisites:
 
-- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- Install [Vagrant](https://developer.hashicorp.com/vagrant/docs/installation).
 
-## Installation
+- Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
-Clone the code to any directory you like:
+## Getting Started
+
+Follow these steps to copy the code to your desired directory:
 
 ```
 mkdir ~/nifti-files
-mdikr cogni_scan
+mkdir cogni_scan
 cd cogni_scan
 git clone https://github.com/neuproscan/cogni_scan.git
 vagrant up
 vagrant ssh
 ```
 
-To run the NiftiViewer (while on the vagrant box):
+To run NiftiViewer from the vagrant box, enter:
 
 ```
 nv
 ```
 
-To make a nifti file accessible to Niftiviewer you must copy it to the 
-`~/nifti-files` directory that you created in the first step; doing so will
-make it visible under the `/cogni_scan/shared` directory insider the vagrant
-box.
+## Opening a nifti file
+
+To access a nifti file with Niftiviewer, add it to the `~/nifti-files`
+directory you created earlier. This will make it appear in the
+`/cogni_scan/shared` directory from inside the vagrant box.
+
+After adding a nifti file to the `nifti-files` directory, you can then open it
+within the NiftiViewer application using the open option from the main menu.
+
+## Making predictions
+
+To generate a prediction for the currently open nifti file, go to `Options |
+Make predictions` in the main menu. This will run the file through all
+available models, and update the screen with the predicted chance of the
+subject developing dementia in the future.
 
 
+## Troubleshoot
 
+If you encounter any issues while cloning the repository, launching the Vagrant
+box, or using the NiftiViewer application, please visit our [FAQs](insert link)
+page or [contact support](insert link).
 
+Remember to frequently check this repository for updates and improvements to
+the NiftiViewer application.
+
+## Feedback
+
+Your feedback is very valuable to us! If you have any suggestions for
+improvements or new features for the NiftiViewer application, please feel free
+to create an issue on our GitHub repository.
+
+`git clone https://github.com/neuproscan`
 
