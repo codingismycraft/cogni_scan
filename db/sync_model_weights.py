@@ -17,12 +17,10 @@ def weights_already_available(model_id):
 def download_weights(model_id):
     if not os.path.isdir(_WEIGHTS_DIR):
         os.makedirs(_WEIGHTS_DIR)
-
-    filename = os.path.join(_WEIGHTS_DIR, f"{model_id}.h5")
     url = f"https://neuproscan-storage.us-east-1.linodeobjects.com/{model_id}.h5"
     print(f"Downloading weights for {model_id}")
     os.system(f"wget {url}")
-    os.system(f"mv {model_id}.h5 {_WEIGHTS_DIR}")
+    os.system(f"sudo mv {model_id}.h5 {_WEIGHTS_DIR}")
     os.system(f"rm {model_id}.h5")
     print(f"Done with {model_id}")
 
