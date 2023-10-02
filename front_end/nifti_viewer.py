@@ -7,6 +7,7 @@ import tempfile
 import uuid
 
 import PIL
+import pathlib
 import psycopg2
 
 from PIL import ImageTk
@@ -82,7 +83,13 @@ class MainFrame:
             self._root.quit()
             self._root = None
         elif event == OPEN_FILE:
-            filename = fd.askopenfilename(initialdir="/home/john/nifti-samples")
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            if current_dir.startswith("/cogni_scan"):
+                initialdir = "/cogni_scan/shared"
+            else:
+                home_dir = pathlib.Path.home()
+                initialdir = os.path.join(home_dir,"nifti-files")
+            filename = fd.askopenfilename(initialdir=initialdir)
             self.setNiftiFile(filename)
         elif event == RUN_PREDICTIONS:
             self._runPredictions()
