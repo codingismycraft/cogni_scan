@@ -16,5 +16,5 @@ docker exec mydb psql -U postgres scans -f create-slim-db.sql
 
 # Synchronize the weights if needed
 ./sync_model_weights.py
-
+rm models.csv*
 cd -

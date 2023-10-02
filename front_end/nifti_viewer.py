@@ -6,7 +6,8 @@ import sys
 import tempfile
 import uuid
 
-import PIL 
+import PIL
+import psycopg2
 
 from PIL import ImageTk
 from tkinter import *
@@ -288,7 +289,19 @@ class MainFrame:
         self._root.mainloop()
 
 
+def create_db_if_needed():
+    try:
+        with dbutil.SimpleSQL():
+            pass
+    except psycopg2.OperationalError:
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        if current_dir.startswith("/cogni_scan"):
+            # We run on vagrant thus go and try to create the database.
+            os.system(f"{current_dir}/../db/update-docker.sh")
+
+
 if __name__ == '__main__':
+    create_db_if_needed()
     mf = MainFrame()
     filename = None if len(sys.argv) <= 1 else sys.argv[1]
     mf.main("View NIFTI File", filename=filename)
