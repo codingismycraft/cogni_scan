@@ -42,7 +42,7 @@ SCRIPT
 
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/ubuntu-22.04"
+  config.vm.box = "bento/ubuntu-20.04"
   config.vm.synced_folder "./", "/cogni_scan/"
   config.vm.synced_folder "~/nifti-files",  "/cogni_scan/shared"
   config.ssh.forward_agent = true
