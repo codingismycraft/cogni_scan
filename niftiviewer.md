@@ -8,13 +8,13 @@ in the following years.
 To keep things easier to run NiftiViewer is bundled to run from a VM that is
 managed from the Vagrant file that can be found in this directory.
 
-### Requirements:
+## Requirements:
 
 - [Vagrant](https://developer.hashicorp.com/vagrant/docs/installation)
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-### Instructions
+## Installation
 
 Clone the code to any directory you like:
 
@@ -27,19 +27,13 @@ vagrant up
 vagrant ssh
 ```
 
-The first time you are running the code you need to create the database (while
-on the vagrant box):
-
-```
-updatedb
-```
-
 To run the NiftiViewer (while on the vagrant box):
+
 ```
 nv
 ```
 
-To make a nifti file accessible to Niftiviewer you must copy it to the the
+To make a nifti file accessible to Niftiviewer you must copy it to the 
 `~/nifti-files` directory that you created in the first step; doing so will
 make it visible under the `/cogni_scan/shared` directory insider the vagrant
 box.
