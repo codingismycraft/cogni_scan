@@ -24,6 +24,7 @@ mkdir ~/nifti-files
 mkdir cogni_scan
 cd cogni_scan
 git clone https://github.com/neuproscan/cogni_scan.git
+cd cogni_scan
 vagrant up
 vagrant ssh
 ```
