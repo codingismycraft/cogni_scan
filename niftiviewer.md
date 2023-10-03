@@ -23,7 +23,7 @@ Follow these steps to copy the code to your desired directory:
 mkdir ~/nifti-files
 mkdir cogni_scan
 cd cogni_scan
-git clone https://github.com/neuproscan/cogni_scan.git
+git clone https://git@github.com:neuproscan/cogni_scan.git
 cd cogni_scan
 vagrant up
 vagrant ssh
