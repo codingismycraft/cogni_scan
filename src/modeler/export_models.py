@@ -1,6 +1,7 @@
 """Exports the models details to files that can be uploaded to Sibyl."""
 
 import os
+import pathlib
 import json
 
 import cogni_scan.src.modeler.model as model
@@ -27,6 +28,14 @@ def main():
         remote_ip=_REMOTE_IP,
         remote_drive=_REMOTE_DRIVE
     )
+    print(cmd)
+    os.system(cmd)
+
+    # Move the models-info.json under the well known ~/.cogni_scan directory.
+    home_dir = pathlib.Path.home()
+    dest = os.path.join(home_dir, '.cogni_scan', _OUTPUT_FILE)
+    cmd = f'mv {_OUTPUT_FILE} {dest}'
+    print(cmd)
     os.system(cmd)
 
 
