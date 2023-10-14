@@ -53,3 +53,8 @@ def getDatasetByID(dataset_id):
     raises: ValueError if the dataset does not exist.
     """
     return dataset_impl.getDatasetByID(dataset_id)
+
+
+def getAllModelsAsJson():
+    """Returns all models as JSON (Used from Sibyl UI)."""
+    return model_impl.getAllModelsAsJson()

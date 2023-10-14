@@ -176,7 +176,7 @@ class _Model(interfaces.IModel):
             db.execute_non_query(sql)
 
         # Delete the weights from the filesystem.
-        fullpath = self._getStorageFullPath()
+        fullpath = self.getStorageFullPath()
         if os.path.isfile(fullpath):
             os.remove(fullpath)
 
@@ -224,7 +224,7 @@ class _Model(interfaces.IModel):
 
             db.execute_non_query(sql)
 
-    def _getStorageFullPath(self):
+    def getStorageFullPath(self):
         """Returns the full path to the h5 file containing the weights."""
         assert self._model_id
         cogni_scan_dir = self.getStorageDir()
@@ -234,7 +234,7 @@ class _Model(interfaces.IModel):
 
     def _saveWeights(self):
         """Saves the model's weights as a file."""
-        full_path = self._getStorageFullPath()
+        full_path = self.getStorageFullPath()
         self._model.save(full_path)
 
     def trainAndSave(self, dataset, slices, max_epochs=120):
@@ -356,7 +356,7 @@ class _Model(interfaces.IModel):
     def _loadWeightsIfNeeded(self):
         """Loads the model's weights from the corresponding file."""
         if not self._model:
-            full_path = self._getStorageFullPath()
+            full_path = self.getStorageFullPath()
             self._model = tf.keras.models.load_model(full_path)
 
     def unloadWeights(self):
@@ -400,3 +400,25 @@ class _Model(interfaces.IModel):
         features = np.array([features])
         y_pred = self._model.predict(features)
         return y_pred[0][0]
+
+
+def getAllModelsAsJson():
+    """Returns all models as JSON (Used from Sibyl UI)."""
+    slice_labels = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
+    models = []
+    for model in getModels():
+        selected_slices = set(model.getSlices())
+        slices = [ 1  if s in selected_slices else 0 for s in slice_labels]
+        models.append({
+            "model_id": model.getModelID()[:8],
+            "weights_path": model.getStorageFullPath(),
+            "slices": slices,
+            "accuracy": model.getAccuracyScore(),
+            "F1": model.getF1()
+        })
+
+    data = {
+        "slice_labels": slice_labels,
+        "models": models
+    }
+    return data
