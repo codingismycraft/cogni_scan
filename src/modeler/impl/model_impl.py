@@ -383,19 +383,30 @@ class _Model(interfaces.IModel):
         slices = sorted(self.getSlices())
         distances = scan.getSliceDistances()
         features = None
+
         for slice_desc in slices:
             # slice_desc can be something like '01', '22' etc.
             image_axis = int(slice_desc[0])
-            assert 0 <= image_axis <= 2
-            # Find the distance from center for the given axis.
-            distance_index = int(slice_desc[1]) - 1
-            assert 0 <= image_axis < len(distances)
-            distance = float(distances[image_axis])
+            slice_index = int(slice_desc[1])
+            abs_distance =float(distances[image_axis])
+
+            # Based on the slice find the distance from the center slice
+            if slice_index == 1:
+                distance = -1 * abs_distance
+            elif slice_index == 2:
+                distance = 0
+            elif slice_index == 3:
+                distance = abs_distance
+            else:
+                assert 1 <= slice_index <= 3
+
+            # Accumulate VGG16 features.
             if features is None:
                 features = scan.getVGG16Features(distance, image_axis)
             else:
                 f1 = scan.getVGG16Features(distance, axis=image_axis)
                 features = np.concatenate((features, f1), axis=0)
+
         features = features.flatten()
         features = np.array([features])
         y_pred = self._model.predict(features)
