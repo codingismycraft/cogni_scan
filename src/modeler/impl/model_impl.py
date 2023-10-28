@@ -16,6 +16,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 import cogni_scan.src.dbutil as dbutil
+import cogni_scan.src.utils as utils
 import cogni_scan.src.modeler.impl.dataset_impl as dataset_impl
 import cogni_scan.src.modeler.interfaces as interfaces
 import cogni_scan.src.nifti_mri as nifti_mri
@@ -216,11 +217,15 @@ class _Model(interfaces.IModel):
             )
 
             slices = json.dumps(self._slices)
+            model_name = utils.GetRandomName()
 
             sql = f"insert into models " \
-                  f"(model_id, dataset_id, slices, descriptive_data) " \
+                  f"(model_id, dataset_id, slices, " \
+                  f"descriptive_data, model_name) " \
                   f"values ('{self._model_id}', " \
-                  f"'{self.getDatasetID()}', '{slices}' , '{desc_data}' ) "
+                  f"'{self.getDatasetID()}', '{slices}' , " \
+                  f"'{desc_data}', '{model_name}' ) "
+
 
             db.execute_non_query(sql)
 
@@ -410,6 +415,7 @@ class _Model(interfaces.IModel):
         features = features.flatten()
         features = np.array([features])
         y_pred = self._model.predict(features)
+        print(y_pred[0][0])
         return y_pred[0][0]
 
 
