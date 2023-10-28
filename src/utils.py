@@ -6,6 +6,7 @@ import json
 
 import nibabel as nib
 import cogni_scan.src.nifti_mri as nm
+import cogni_scan.src.impl.name_creator as name_creator
 
 AXES = [
     (0, 1, 2),
@@ -95,6 +96,10 @@ def saveMri(path, axes=None, rotation=None):
     """
 
     print(sql)
+
+
+def GetRandomName():
+    return name_creator.GetRandomName()
 
 
 if __name__ == '__main__':
