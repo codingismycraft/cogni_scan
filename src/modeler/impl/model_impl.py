@@ -38,7 +38,7 @@ def getModels():
     """Returns a list of all the IModel instances from the database."""
     with dbutil.SimpleSQL() as db:
         sql = "select model_id, dataset_id, slices," \
-              " descriptive_data from models"
+              " descriptive_data, model_name from models"
         return [_Model(*row) for row in db.execute_query(sql)]
 
 
@@ -60,6 +60,7 @@ class _Model(interfaces.IModel):
 
     # Instance level attributes.
     _model_id = None
+    _model_name = None
     _dataset_id = None
     _slices = None
     _training_history = None
@@ -75,7 +76,8 @@ class _Model(interfaces.IModel):
     _testing_predictions = None
 
     def __init__(self, model_id=None,
-                 dataset_id=None, slices=None, descriptive_data=None):
+                 dataset_id=None, slices=None, descriptive_data=None,
+                 model_name=None):
         """Initializes the Model object.
 
         If the model_id is passed as None, this means that we need to create
@@ -94,6 +96,7 @@ class _Model(interfaces.IModel):
             self._clear()
         else:
             self._model_id = model_id
+            self._model_name = model_name
             self._dataset_id = dataset_id
             self._slices = slices
             self._confusion_matrix = np.array(
@@ -144,6 +147,10 @@ class _Model(interfaces.IModel):
     def getModelID(self):
         """Returns the name of the model."""
         return self._model_id
+
+    def getModelName(self):
+        """Returns the name of the model."""
+        return self._model_name
 
     def isTrained(self):
         """Returns true if ready to make predictions."""
@@ -431,7 +438,9 @@ def getAllModelsAsJson():
             "weights_path": model.getStorageFullPath(),
             "slices": slices,
             "accuracy": model.getAccuracyScore(),
-            "F1": model.getF1()
+            "F1": model.getF1(),
+            "model_name": model.getModelName()
+
         })
 
     data = {

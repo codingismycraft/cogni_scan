@@ -64,7 +64,7 @@ class TopView(view.View):
         # All all the available models in the right canvas.
         canvas = Canvas(
             self.__parent_frame,
-            width=400,
+            width=300,
             height=60,
             bg=settings.TOP_BACKGROUND_COLOR,
             highlightthickness=0
@@ -80,28 +80,21 @@ class TopView(view.View):
 
         model_label.place(relx=0, rely=0, x=10, width=110, height=30)
 
-        all_slices = ['01', '02', '03', '11', '12', '13', '21', '22', '23']
 
-        columns = all_slices + ['accuracy', 'F1']
+        columns = ['Name', 'accuracy', 'F1']
         # Treeview
         self._treeview = ttk.Treeview(canvas, columns=columns, show='headings')
-        self._treeview.place(x= 4, y=4, width=350, height=200)
+        self._treeview.place(x= 4, y=4, width=240, height=200)
 
         vsb = ttk.Scrollbar(canvas, orient="vertical", command=self._treeview.yview)
-        vsb.place(x=356 , y=4, height=200)
+        vsb.place(x=246 , y=4, height=200)
 
         self._treeview.configure(yscrollcommand=vsb.set)
 
-        for s in all_slices:
-            self._treeview.column(s, minwidth=0, width=30, stretch=NO)
-
+        self._treeview.column('Name', minwidth=0, width=140, stretch=NO)
+        self._treeview.heading('Name', text="Name")
         self._treeview.column('accuracy', minwidth=0, width=40, stretch=NO)
         self._treeview.column('F1', minwidth=0, width=40, stretch=NO)
-
-        # Treeview headings
-        for s in all_slices:
-            self._treeview.heading(s, text=s)
-
         self._treeview.heading('accuracy', text="Acc.")
         self._treeview.heading('F1', text="F1")
 
@@ -111,22 +104,14 @@ class TopView(view.View):
 
         for index, m in enumerate(all_models):
             iid = m.getModelID()
-
-            slices = []
-            for s in all_slices:
-                if s in m.getSlices():
-                    slices.append('X')
-                else:
-                    slices.append(' ')
-
             f1 = f"{m.getF1():0.02}"
             accuracy = f"{m.getAccuracyScore():0.02}"
-
+            model_name = m.getModelName()
             self._treeview.insert(
                 parent="",
                 index="end",
                 iid=iid,
-                values=slices + [accuracy, f1]
+                values=[model_name, accuracy, f1]
             )
 
         def removeModelFromTree(model_id):
