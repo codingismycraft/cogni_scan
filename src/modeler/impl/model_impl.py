@@ -349,10 +349,11 @@ class _Model(interfaces.IModel):
         """
         labels = list(self._training_history.keys())
         labels = sorted(labels)
-        return labels
+        return ["X"] + labels
 
     def getTrainingStats(self):
         labels = self.getTrainingStatsLabels()
+        labels.remove("X")
         rows = [self._training_history[label] for label in labels]
 
         lengths = set([len(row) for row in rows])
@@ -362,7 +363,7 @@ class _Model(interfaces.IModel):
 
         stats = []
         for index in range(lengths[0]):
-            d = []
+            d = [index]
             for row in rows:
                 d.append(row[index])
             stats.append(d)
