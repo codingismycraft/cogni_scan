@@ -13,7 +13,7 @@ _REMOTE_DRIVE = "/mnt/sibyl_drive"
 _SCP_CMD = "rsync -v {files} {remote_user}@{remote_ip}:{remote_drive}"
 
 
-def main():
+def main(sync_files):
     filepaths = [_OUTPUT_FILE]
     with open(_OUTPUT_FILE, 'w') as fout:
         info = model.getAllModelsAsJson()
@@ -22,22 +22,24 @@ def main():
             del m["weights_path"]
         fout.write(json.dumps(info, indent=4))
     files = ' '.join(filepaths)
-    cmd = _SCP_CMD.format(
-        files=files,
-        remote_user=_REMOTE_USER,
-        remote_ip=_REMOTE_IP,
-        remote_drive=_REMOTE_DRIVE
-    )
-    print(cmd)
-    os.system(cmd)
 
-    # Move the models-info.json under the well known ~/.cogni_scan directory.
-    home_dir = pathlib.Path.home()
-    dest = os.path.join(home_dir, '.cogni_scan', _OUTPUT_FILE)
-    cmd = f'mv {_OUTPUT_FILE} {dest}'
-    print(cmd)
-    os.system(cmd)
+    if sync_files:
+        cmd = _SCP_CMD.format(
+            files=files,
+            remote_user=_REMOTE_USER,
+            remote_ip=_REMOTE_IP,
+            remote_drive=_REMOTE_DRIVE
+        )
+        print(cmd)
+        os.system(cmd)
+
+        # Move the models-info.json under the well known ~/.cogni_scan directory.
+        home_dir = pathlib.Path.home()
+        dest = os.path.join(home_dir, '.cogni_scan', _OUTPUT_FILE)
+        cmd = f'mv {_OUTPUT_FILE} {dest}'
+        print(cmd)
+        os.system(cmd)
 
 
 if __name__ == '__main__':
-    main()
+    main(True)

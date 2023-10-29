@@ -433,13 +433,15 @@ def getAllModelsAsJson():
     for model in getModels():
         selected_slices = set(model.getSlices())
         slices = [ 1  if s in selected_slices else 0 for s in slice_labels]
+        confusion_matrix = model.getConfusionMatrix().tolist()
         models.append({
             "model_id": model.getModelID()[:8],
             "weights_path": model.getStorageFullPath(),
             "slices": slices,
             "accuracy": model.getAccuracyScore(),
             "F1": model.getF1(),
-            "model_name": model.getModelName()
+            "model_name": model.getModelName(),
+            "confusion_matrix": confusion_matrix
 
         })
 
