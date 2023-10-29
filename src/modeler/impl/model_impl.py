@@ -342,6 +342,39 @@ class _Model(interfaces.IModel):
         """Returns the confusion matrix of the model."""
         return self._confusion_matrix
 
+    def getTrainingStatsLabels(self):
+        """Returns the labels of the training stats.
+
+        Needed to export the training stats to a file.
+        """
+        labels = list(self._training_history.keys())
+        labels = sorted(labels)
+        return labels
+
+    def getTrainingStats(self):
+        labels = self.getTrainingStatsLabels()
+        rows = [self._training_history[label] for label in labels]
+
+        lengths = set([len(row) for row in rows])
+        if len(lengths) != 1:
+            return []
+        lengths = list(lengths)
+
+        stats = []
+        for index in range(lengths[0]):
+            d = []
+            for row in rows:
+                d.append(row[index])
+            stats.append(d)
+        return stats
+
+
+
+
+
+
+
+
     def getTrainingHistory(self):
         """Returns the training history of the model."""
         return self._training_history
@@ -441,8 +474,9 @@ def getAllModelsAsJson():
             "accuracy": model.getAccuracyScore(),
             "F1": model.getF1(),
             "model_name": model.getModelName(),
-            "confusion_matrix": confusion_matrix
-
+            "confusion_matrix": confusion_matrix,
+            "training_stats_labels": model.getTrainingStatsLabels(),
+            "training_stats": model.getTrainingStats(),
         })
 
     data = {
