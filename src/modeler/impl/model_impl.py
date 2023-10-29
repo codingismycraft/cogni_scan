@@ -150,7 +150,7 @@ class _Model(interfaces.IModel):
 
     def getModelName(self):
         """Returns the name of the model."""
-        return self._model_name
+        return _PrettifyName(self._model_name)
 
     def isTrained(self):
         """Returns true if ready to make predictions."""
@@ -450,3 +450,10 @@ def getAllModelsAsJson():
         "models": models
     }
     return data
+
+
+def _PrettifyName(name):
+    name = name.replace("_", " ")
+    tokens = name.split(" ")
+    tokens = [x.capitalize() for x in tokens]
+    return ' '.join(tokens)
