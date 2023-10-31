@@ -20,6 +20,7 @@ import cogni_scan.src.utils as utils
 import cogni_scan.src.modeler.impl.dataset_impl as dataset_impl
 import cogni_scan.src.modeler.interfaces as interfaces
 import cogni_scan.src.nifti_mri as nifti_mri
+import cogni_scan.src.modeler.model as model_lib
 
 _VALID_SLICES = ["01", "02", "03", "11", "12", "13", "21", "22", "23"]
 
@@ -468,6 +469,11 @@ def getAllModelsAsJson():
         selected_slices = set(model.getSlices())
         slices = [ 1  if s in selected_slices else 0 for s in slice_labels]
         confusion_matrix = model.getConfusionMatrix().tolist()
+
+        # get the dataset id that we will use for the testing data break downs.
+        dsi = model.getDatasetID()
+        ds = model_lib.getDatasetByID(dsi)
+
         models.append({
             "model_id": model.getModelID()[:8],
             "weights_path": model.getStorageFullPath(),
@@ -478,6 +484,7 @@ def getAllModelsAsJson():
             "confusion_matrix": confusion_matrix,
             "training_stats_labels": model.getTrainingStatsLabels(),
             "training_stats": model.getTrainingStats(),
+            "dataset": ds.getDescription()
         })
 
     data = {
