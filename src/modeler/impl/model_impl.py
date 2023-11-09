@@ -234,7 +234,6 @@ class _Model(interfaces.IModel):
                   f"'{self.getDatasetID()}', '{slices}' , " \
                   f"'{desc_data}', '{model_name}' ) "
 
-
             db.execute_non_query(sql)
 
     def getStorageFullPath(self):
@@ -370,13 +369,6 @@ class _Model(interfaces.IModel):
             stats.append(d)
         return stats
 
-
-
-
-
-
-
-
     def getTrainingHistory(self):
         """Returns the training history of the model."""
         return self._training_history
@@ -435,7 +427,7 @@ class _Model(interfaces.IModel):
             # slice_desc can be something like '01', '22' etc.
             image_axis = int(slice_desc[0])
             slice_index = int(slice_desc[1])
-            abs_distance =float(distances[image_axis])
+            abs_distance = float(distances[image_axis])
 
             # Based on the slice find the distance from the center slice
             if slice_index == 1:
@@ -467,12 +459,16 @@ def getAllModelsAsJson():
     models = []
     for model in getModels():
         selected_slices = set(model.getSlices())
-        slices = [ 1  if s in selected_slices else 0 for s in slice_labels]
+        slices = [1 if s in selected_slices else 0 for s in slice_labels]
         confusion_matrix = model.getConfusionMatrix().tolist()
 
         # get the dataset id that we will use for the testing data break downs.
         dsi = model.getDatasetID()
         ds = model_lib.getDatasetByID(dsi)
+
+        fpr, tpr = model.getROCCurve()
+
+        roc_curve = [[x, y] for x, y in zip(fpr, tpr)]
 
         models.append({
             "model_id": model.getModelID()[:8],
@@ -484,7 +480,8 @@ def getAllModelsAsJson():
             "confusion_matrix": confusion_matrix,
             "training_stats_labels": model.getTrainingStatsLabels(),
             "training_stats": model.getTrainingStats(),
-            "dataset": ds.getDescription()
+            "dataset": ds.getDescription(),
+            "roc_curve": roc_curve
         })
 
     data = {
